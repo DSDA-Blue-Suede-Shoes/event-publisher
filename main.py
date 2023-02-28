@@ -1,3 +1,5 @@
+import warnings
+
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -89,7 +91,7 @@ def find_element_by_attribute(by: By, el_search: str, attribute: str, match_list
     return next(filter(lambda el: attribute_match(el, attribute, match_list), els), None)
 
 
-def facebook_event():
+def facebook_event(event_info):
     driver.get("https://www.facebook.com/events/create/")
     pass
     profile_svg = find_element_by_attribute(By.TAG_NAME, "svg", "aria-label", ["Je profiel", "Your profile"])
@@ -129,7 +131,7 @@ def get_events():
 
     event_page = requests.get(event['link'])
     soup = BeautifulSoup(event_page.text, 'html.parser')
-    print(soup.prettify())
+
     start_date = soup.find("abbr", "tribe-events-start-date")['title']
     end_date = soup.find("div", "tribe-events-start-time")['title']
     times = soup.find("div", "tribe-events-start-time").text.strip()
@@ -147,6 +149,16 @@ def get_events():
     categories = [cat.text for cat in categories_wrapper.find_all('a')]
     event['categories'] = categories
 
+    image_url = soup.find("img", "wp-post-image")['src']
+    r = requests.get(image_url, stream=True)
+    if r.status_code == 200:
+        with open('event-image.jpg', 'wb') as f:
+            import shutil
+            r.raw.decode_content = True
+            shutil.copyfileobj(r.raw, f)
+    else:
+        warnings.warn("Could not download event image.")
+
     return event
 
 
@@ -158,7 +170,7 @@ if __name__ == '__main__':
     assert FACEBOOK_ID is not None
     assert FACEBOOK_PASSWORD is not None
 
-    get_events()
+    event = get_events()
 
     PATH = 'C:\\Program Files\\Python311\\Scripts\\geckodriver.exe'  # Same Directory as Python Program
     options = Options()
@@ -170,4 +182,4 @@ if __name__ == '__main__':
     driver.get("https://www.facebook.com/")
     # time.sleep(1)
     facebook_login(FACEBOOK_ID, FACEBOOK_PASSWORD)
-    facebook_event()
+    facebook_event(event)

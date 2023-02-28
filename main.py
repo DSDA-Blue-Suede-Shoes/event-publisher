@@ -7,16 +7,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
+import requests
+from bs4 import BeautifulSoup
 import time
 import os
 import pyotp
-
-PATH = 'C:\\Program Files\\Python311\\Scripts\\geckodriver.exe'  # Same Directory as Python Program
-options = Options()
-options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
-
-service = Service(executable_path=PATH)
-driver = webdriver.Firefox(service=service, options=options)
 
 
 def facebook_login(id: str, password: str):
@@ -83,12 +78,12 @@ def attribute_match(el: WebElement, attribute: str, match_list: list):
 def find_element_by_attribute(by: By, el_search: str, attribute: str, match_list: list):
     """
     Finds the first element that has an attribute value matching to something in match_list.
-    
+
     :param by: What to initially search by
     :param el_search: Element search string
     :param attribute: Attribute name
     :param match_list: Attribute match strings
-    :return: 
+    :return:
     """
     els = driver.find_elements(by, el_search)
     return next(filter(lambda el: attribute_match(el, attribute, match_list), els), None)
@@ -120,6 +115,41 @@ def facebook_event():
     pass
 
 
+def get_events():
+    events_raw = requests.get("https://dsda.nl/wp-json/wp/v2/tribe_events").json()
+    events = [{'name': event['title']['rendered'], 'link': event['link']} for event in events_raw]
+    print("Select event:")
+    for i, event in enumerate(events):
+        print(f"  {i+1}: {event['name']}")
+
+    choice = -1
+    while choice <= 0 or choice > len(events):
+        choice = int(input("Pick"))
+    event = events[choice-1]
+
+    event_page = requests.get(event['link'])
+    soup = BeautifulSoup(event_page.text, 'html.parser')
+    print(soup.prettify())
+    start_date = soup.find("abbr", "tribe-events-start-date")['title']
+    end_date = soup.find("div", "tribe-events-start-time")['title']
+    times = soup.find("div", "tribe-events-start-time").text.strip()
+    times = times.split(' - ')
+    event['start_date'] = start_date
+    event['end_date'] = end_date
+    event['start_time'] = times[0]
+    event['end_time'] = times[1]
+    event['venue'] = soup.find("dd", "tribe-venue").text.strip()
+
+    content = soup.find("div", "tribe-events-content").text.strip()
+    event['content'] = content
+
+    categories_wrapper = soup.find("dd", "tribe-events-event-categories")
+    categories = [cat.text for cat in categories_wrapper.find_all('a')]
+    event['categories'] = categories
+
+    return event
+
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     FACEBOOK_ID = os.getenv("FACEBOOK_ID")
@@ -127,6 +157,15 @@ if __name__ == '__main__':
     FACEBOOK_TOTP = os.getenv("FACEBOOK_TOTP")
     assert FACEBOOK_ID is not None
     assert FACEBOOK_PASSWORD is not None
+
+    get_events()
+
+    PATH = 'C:\\Program Files\\Python311\\Scripts\\geckodriver.exe'  # Same Directory as Python Program
+    options = Options()
+    options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
+
+    service = Service(executable_path=PATH)
+    driver = webdriver.Firefox(service=service, options=options)
 
     driver.get("https://www.facebook.com/")
     # time.sleep(1)

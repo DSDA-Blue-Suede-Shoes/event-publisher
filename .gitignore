@@ -124,4 +124,7 @@ dmypy.json
 .pyre/
 
 .idea
+
 event-image.jpg
+credentials.json
+token.json

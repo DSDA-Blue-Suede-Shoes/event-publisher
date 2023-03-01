@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 import time
 import os
 import pyotp
+from datetime import datetime
 
 
 def facebook_login(id: str, password: str):
@@ -140,6 +141,8 @@ def get_events():
     event['end_date'] = end_date
     event['start_time'] = times[0]
     event['end_time'] = times[1]
+    event['start'] = datetime.strptime(f"{event['start_date']} {event['start_time']}", "%Y-%m-%d %H:%M")
+    event['end'] = datetime.strptime(f"{event['end_date']} {event['end_time']}", "%Y-%m-%d %H:%M")
     event['venue'] = soup.find("dd", "tribe-venue").text.strip()
 
     content = soup.find("div", "tribe-events-content").text.strip()

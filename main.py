@@ -144,6 +144,7 @@ def get_events():
     event['start'] = datetime.strptime(f"{event['start_date']} {event['start_time']}", "%Y-%m-%d %H:%M")
     event['end'] = datetime.strptime(f"{event['end_date']} {event['end_time']}", "%Y-%m-%d %H:%M")
     event['venue'] = soup.find("dd", "tribe-venue").text.strip()
+    event['address'] = f'{soup.find("span", "tribe-street-address").text.strip()}, {soup.find("span", "tribe-postal-code").text.strip()} {soup.find("span", "tribe-locality").text.strip()}'
 
     content = soup.find("div", "tribe-events-content").text.strip()
     event['content'] = content

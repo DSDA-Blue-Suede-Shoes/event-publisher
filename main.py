@@ -15,6 +15,7 @@ import time
 import os
 import pyotp
 from datetime import datetime
+from calendar_adapter import CalendarAdapter
 
 
 def facebook_login(id: str, password: str):
@@ -120,7 +121,8 @@ def facebook_event(event_info):
 
 def get_events():
     events_raw = requests.get("https://dsda.nl/wp-json/wp/v2/tribe_events").json()
-    events = [{'name': event['title']['rendered'], 'link': event['link']} for event in events_raw]
+    events = [{'name': event['title']['rendered'], 'content': event['content']['rendered'],
+               'link': event['link'], 'slug': event['slug']} for event in events_raw]
     print("Select event:")
     for i, event in enumerate(events):
         print(f"  {i+1}: {event['name']}")
@@ -146,8 +148,8 @@ def get_events():
     event['venue'] = soup.find("dd", "tribe-venue").text.strip()
     event['address'] = f'{soup.find("span", "tribe-street-address").text.strip()}, {soup.find("span", "tribe-postal-code").text.strip()} {soup.find("span", "tribe-locality").text.strip()}'
 
-    content = soup.find("div", "tribe-events-content").text.strip()
-    event['content'] = content
+    # content = soup.find("div", "tribe-events-content").text.strip()
+    # event['content'] = content
 
     categories_wrapper = soup.find("dd", "tribe-events-event-categories")
     categories = [cat.text for cat in categories_wrapper.find_all('a')]
@@ -175,6 +177,8 @@ if __name__ == '__main__':
     assert FACEBOOK_PASSWORD is not None
 
     event = get_events()
+
+    calendar = CalendarAdapter()
 
     PATH = 'C:\\Program Files\\Python311\\Scripts\\geckodriver.exe'  # Same Directory as Python Program
     options = Options()

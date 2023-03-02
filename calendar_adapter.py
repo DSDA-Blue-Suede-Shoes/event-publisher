@@ -1,5 +1,6 @@
 import datetime
 import os.path
+import base64
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -10,6 +11,62 @@ from googleapiclient.discovery import Resource
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/calendar']
+
+calendar_ids = {
+    'testing': 'primary',
+    # 'general': 'q3bdd3oa0qmdk3k7plvug31u6c@group.calendar.google.com',
+    # 'ballroom': 'stgo5dh75karln6v7c68b8u8d4@group.calendar.google.com',
+    # 'argentine tango': '0tl34lgpbpmgncb5t400kfgsjs@group.calendar.google.com',
+    # 'lindy hop': 'c_45072b8c924f957e972bc1e0aca3360eb7bb9c87802cf9b0bda9a7a69dc33cbe@group.calendar.google.com',
+}
+
+
+class CalendarAdapter:
+    def __init__(self):
+        self.service = get_service()
+
+    @staticmethod
+    def event_id(event: dict):
+        return base64.b32encode(event['slug'])
+
+    def create_event(self, event: dict):
+        event = {
+            'id': self.event_id(event),
+            'summary': event['title'],
+            'location': f"{event['venue']}, {event['address']}",
+            'description': event['content'],
+            'start': {
+                'dateTime': event['start'].isoformat(),
+                'timeZone': 'Europe/Brussels',
+            },
+            'end': {
+                'dateTime': event['end'].isoformat(),
+                'timeZone': 'Europe/Brussels',
+            },
+        }
+
+        categories = ['general', 'testing'] + list(event['categories'])
+
+        for category in event['categories']:
+            if calendar_ids.get(category) is None:
+                continue
+            event = self.service.events().insert(calendarId=calendar_ids[category], body=event).execute()
+            print(f"Event created in {category} calendar: {event.get('htmlLink')}")
+
+    def find_event(self, event: dict):
+        id = self.event_id(event)
+        event_ob = self.service.events().get(calendarId=calendar_ids['general'], eventId=id).execute()
+        if event_ob is not None:
+            print("Found event using id")
+            return event_ob
+
+        start_time = event['start'].isoformat()
+        end_time = event['start'].isoformat()
+        print('Getting the upcoming 10 events')
+        events_result = self.service.events().list(calendarId=calendar_ids['general'], maxResults=10,
+                                                   timeMin=start_time, timeMax=end_time,
+                                                   singleEvents=True, orderBy='startTime').execute()
+        events = events_result.get('items', [])
 
 
 def get_service() -> Resource:
@@ -48,44 +105,14 @@ def get_calendars(service: Resource):
         return []
 
 
-def create_event(service: Resource, event: dict):
-    event = {
-        'summary': event['title'],
-        'location': f"{event['venue']}, {event['address']}",
-        'description': event['content'],
-        'start': {
-            'dateTime': event['start'].isoformat(),
-            'timeZone': 'Europe/Brussels',
-        },
-        'end': {
-            'dateTime': event['end'].isoformat(),
-            'timeZone': 'Europe/Brussels',
-        },
-    }
-
-    categories = ['general'] + list(event['categories'])
-
-    for category in event['categories']:
-        if calendar_ids.get(category) is None:
-            continue
-        event = service.events().insert(calendarId=calendar_ids[category], body=event).execute()
-        print(f"Event created in {category} calendar: {event.get('htmlLink')}")
-
-
-calendar_ids = {
-    'general': 'q3bdd3oa0qmdk3k7plvug31u6c@group.calendar.google.com',
-    'ballroom': 'stgo5dh75karln6v7c68b8u8d4@group.calendar.google.com',
-    'argentine tango': '0tl34lgpbpmgncb5t400kfgsjs@group.calendar.google.com',
-    'lindy hop': 'c_45072b8c924f957e972bc1e0aca3360eb7bb9c87802cf9b0bda9a7a69dc33cbe@group.calendar.google.com',
-}
-
-
 def main():
     """Shows basic usage of the Google Calendar API.
     Prints the start and name of the next 10 events on the user's calendar.
     """
     try:
         service = get_service()
+
+        get_calendars(service)
 
         # Call the Calendar API
         now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time

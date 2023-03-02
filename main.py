@@ -16,6 +16,7 @@ import os
 import pyotp
 from datetime import datetime
 from calendar_adapter import CalendarAdapter
+from utils import DEFAULT_TZ
 
 
 def facebook_login(id: str, password: str):
@@ -143,8 +144,8 @@ def get_events():
     event['end_date'] = end_date
     event['start_time'] = times[0]
     event['end_time'] = times[1]
-    event['start'] = datetime.strptime(f"{event['start_date']} {event['start_time']}", "%Y-%m-%d %H:%M")
-    event['end'] = datetime.strptime(f"{event['end_date']} {event['end_time']}", "%Y-%m-%d %H:%M")
+    event['start'] = DEFAULT_TZ.localize(datetime.strptime(f"{event['start_date']} {event['start_time']}", "%Y-%m-%d %H:%M"))
+    event['end'] = DEFAULT_TZ.localize(datetime.strptime(f"{event['end_date']} {event['end_time']}", "%Y-%m-%d %H:%M"))
     event['venue'] = soup.find("dd", "tribe-venue").text.strip()
     event['address'] = f'{soup.find("span", "tribe-street-address").text.strip()}, {soup.find("span", "tribe-postal-code").text.strip()} {soup.find("span", "tribe-locality").text.strip()}'
 
@@ -179,6 +180,8 @@ if __name__ == '__main__':
     event = get_events()
 
     calendar = CalendarAdapter()
+    g_event = calendar.find_event(event)
+    calendar.create_event(event)
 
     PATH = 'C:\\Program Files\\Python311\\Scripts\\geckodriver.exe'  # Same Directory as Python Program
     options = Options()

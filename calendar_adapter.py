@@ -9,12 +9,15 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.discovery import Resource
 
+from utils import DEFAULT_TZ, DEFAULT_TZ_STR
+
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
+
 calendar_ids = {
     'testing': 'primary',
-    # 'general': 'q3bdd3oa0qmdk3k7plvug31u6c@group.calendar.google.com',
+    'general': 'q3bdd3oa0qmdk3k7plvug31u6c@group.calendar.google.com',
     # 'ballroom': 'stgo5dh75karln6v7c68b8u8d4@group.calendar.google.com',
     # 'argentine tango': '0tl34lgpbpmgncb5t400kfgsjs@group.calendar.google.com',
     # 'lindy hop': 'c_45072b8c924f957e972bc1e0aca3360eb7bb9c87802cf9b0bda9a7a69dc33cbe@group.calendar.google.com',
@@ -27,7 +30,7 @@ class CalendarAdapter:
 
     @staticmethod
     def event_id(event: dict):
-        return base64.b32encode(event['slug'])
+        return base64.b32encode(event['slug'].encode()).decode()
 
     def create_event(self, event: dict):
         event = {
@@ -37,15 +40,15 @@ class CalendarAdapter:
             'description': event['content'],
             'start': {
                 'dateTime': event['start'].isoformat(),
-                'timeZone': 'Europe/Brussels',
+                'timeZone': DEFAULT_TZ_STR,
             },
             'end': {
                 'dateTime': event['end'].isoformat(),
-                'timeZone': 'Europe/Brussels',
+                'timeZone': DEFAULT_TZ_STR,
             },
         }
 
-        categories = ['general', 'testing'] + list(event['categories'])
+        categories = ['testing'] + list(event['categories'])
 
         for category in event['categories']:
             if calendar_ids.get(category) is None:
@@ -55,18 +58,50 @@ class CalendarAdapter:
 
     def find_event(self, event: dict):
         id = self.event_id(event)
-        event_ob = self.service.events().get(calendarId=calendar_ids['general'], eventId=id).execute()
-        if event_ob is not None:
+        try:
+            event_ob = self.service.events().get(calendarId=calendar_ids['general'], eventId=id).execute()
             print("Found event using id")
             return event_ob
+        except HttpError:
+            pass
 
         start_time = event['start'].isoformat()
-        end_time = event['start'].isoformat()
-        print('Getting the upcoming 10 events')
+        end_time = event['end'].isoformat()
+        print('Getting events based on event time')
         events_result = self.service.events().list(calendarId=calendar_ids['general'], maxResults=10,
                                                    timeMin=start_time, timeMax=end_time,
                                                    singleEvents=True, orderBy='startTime').execute()
         events = events_result.get('items', [])
+
+        if events:
+            print("Select event:")
+            for i, event_ob in enumerate(events):
+                print(f"  {i + 1}: {event_ob['summary']}")
+
+            choice = int(input("Pick"))
+            if 0 < choice <= len(events):
+                print("Found event using time")
+                return events[choice - 1]
+
+        print('Getting events based on search query')
+        now = datetime.datetime.utcnow().isoformat() + 'Z'
+        events_result = self.service.events().list(calendarId=calendar_ids['general'], maxResults=10,
+                                                   timeMin=now, q=event['name'],
+                                                   singleEvents=True, orderBy='startTime').execute()
+        events = events_result.get('items', [])
+
+        if events:
+            print("Select event:")
+            for i, event_ob in enumerate(events):
+                print(f"  {i + 1}: {event_ob['summary']}")
+
+            choice = int(input("Pick"))
+            if 0 < choice <= len(events):
+                print("Found event using time")
+                return events[choice - 1]
+
+        return None
+
 
 
 def get_service() -> Resource:

@@ -103,7 +103,6 @@ class CalendarAdapter:
         return None
 
 
-
 def get_service() -> Resource:
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is

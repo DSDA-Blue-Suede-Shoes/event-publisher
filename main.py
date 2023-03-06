@@ -16,6 +16,7 @@ import os
 import pyotp
 from datetime import datetime
 from calendar_adapter import CalendarAdapter
+from unilife_adapter import UnilifeAdapter
 from utils import DEFAULT_TZ
 
 
@@ -177,11 +178,14 @@ if __name__ == '__main__':
     assert FACEBOOK_ID is not None
     assert FACEBOOK_PASSWORD is not None
 
+    UNILIFE_ID = os.getenv("UNILIFE_ID")
+    UNILIFE_PASSWORD = os.getenv("UNILIFE_PASSWORD")
+
     event = get_events()
 
-    calendar = CalendarAdapter()
-    g_event = calendar.find_event(event)
-    calendar.create_event(event)
+    # calendar = CalendarAdapter()
+    # g_event = calendar.find_event(event)
+    # calendar.create_event(event)
 
     PATH = 'C:\\Program Files\\Python311\\Scripts\\geckodriver.exe'  # Same Directory as Python Program
     options = Options()
@@ -189,6 +193,24 @@ if __name__ == '__main__':
 
     service = Service(executable_path=PATH)
     driver = webdriver.Firefox(service=service, options=options)
+
+    unilife_adapter = UnilifeAdapter(driver, UNILIFE_ID, UNILIFE_PASSWORD)
+    unilife_adapter.login()
+    unilife_events = unilife_adapter.get_events()
+    if unilife_events:
+        print("Select event to edit (0 to create new):")
+        for i, event_ob in enumerate(unilife_events):
+            print(f"  {i + 1}: {event_ob['name']}")
+
+        choice = int(input("Pick"))
+        if 0 < choice <= len(unilife_events):
+            event_ob = unilife_events[choice]
+            print(f"Choose {event_ob['name']}")
+            unilife_adapter.update_event(event_ob, event)
+        else:
+            unilife_adapter.create_event(event)
+    else:
+        unilife_adapter.create_event(event)
 
     driver.get("https://www.facebook.com/")
     # time.sleep(1)

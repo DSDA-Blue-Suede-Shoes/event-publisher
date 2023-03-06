@@ -18,9 +18,10 @@ SCOPES = ['https://www.googleapis.com/auth/calendar']
 calendar_ids = {
     'testing': 'primary',
     'general': 'q3bdd3oa0qmdk3k7plvug31u6c@group.calendar.google.com',
-    # 'ballroom': 'stgo5dh75karln6v7c68b8u8d4@group.calendar.google.com',
-    # 'argentine tango': '0tl34lgpbpmgncb5t400kfgsjs@group.calendar.google.com',
-    # 'lindy hop': 'c_45072b8c924f957e972bc1e0aca3360eb7bb9c87802cf9b0bda9a7a69dc33cbe@group.calendar.google.com',
+    'danszusjes': 'b94dllo4lfb6garktd0dlh05io@group.calendar.google.com',
+    'ballroom': 'stgo5dh75karln6v7c68b8u8d4@group.calendar.google.com',
+    'argentine tango': '0tl34lgpbpmgncb5t400kfgsjs@group.calendar.google.com',
+    'lindy hop': 'c_45072b8c924f957e972bc1e0aca3360eb7bb9c87802cf9b0bda9a7a69dc33cbe@group.calendar.google.com',
 }
 
 
@@ -29,15 +30,28 @@ class CalendarAdapter:
         self.service = get_service()
 
     @staticmethod
-    def event_id(event: dict):
+    def event_id(event: dict) -> str:
         return base64.b32encode(event['slug'].encode()).decode()
 
-    def create_event(self, event: dict):
+    @staticmethod
+    def g_event_from_event(event: dict, category: str = "") -> dict:
+        """
+        Create a dictionary in Google Calendar format from event info.
+
+        :param event: Source event info
+        :param category: Category to make the dict for
+        :return: Event info in Calendar format
+        """
+        event_name = f"BSS {event['name']}" if category == 'danszusjes' else event['name']
+
+        description = event['content'].replace('\n', '')  # \n also gets interpreted as enters, we don't want that
+        # Add link to webpage at the bottom
+        description += f"<p><strong>Website event page<br /></strong><a href='{event['link']}'>{event['link']}</a></p>"
+
         event = {
-            'id': self.event_id(event),
-            'summary': event['title'],
+            'summary': event_name,
             'location': f"{event['venue']}, {event['address']}",
-            'description': event['content'],
+            'description': description,
             'start': {
                 'dateTime': event['start'].isoformat(),
                 'timeZone': DEFAULT_TZ_STR,
@@ -47,41 +61,123 @@ class CalendarAdapter:
                 'timeZone': DEFAULT_TZ_STR,
             },
         }
+        return event
 
-        categories = ['testing'] + list(event['categories'])
+    def do_event(self, event: dict) -> list[dict]:
+        """
+        Make sure a given event is present (created/updated) for all relevant event categories.
 
-        for category in event['categories']:
+        :param event: Event information
+        :return: Calendar events
+        """
+        categories = ['general', 'danszusjes'] + list(event['categories'])
+        g_events = []
+
+        for category in categories:
             if calendar_ids.get(category) is None:
                 continue
-            event = self.service.events().insert(calendarId=calendar_ids[category], body=event).execute()
-            print(f"Event created in {category} calendar: {event.get('htmlLink')}")
+            g_event = self.find_event(event, category)
+            if g_event is None:
+                g_event = self.create_event(event, category)
+            else:
+                g_event = self.update_event(event, g_event, category)
+            g_events.append(g_event)
 
-    def find_event(self, event: dict):
-        id = self.event_id(event)
+        return g_events
+
+    def create_event(self, event: dict, category: str = "general") -> dict:
+        """
+        Creates a Google Calendar event based on the info in `event`
+
+        :param event: Source info
+        :param category: Calendar category the event is for
+        :return: Created Calendar event
+        """
+        g_event_data = self.g_event_from_event(event, category)
+        g_event_data['id'] = self.event_id(event)
+
+        g_event = self.service.events().insert(calendarId=calendar_ids[category], body=g_event_data).execute()
+        print(f"Event created in {category} calendar: {g_event.get('htmlLink')}")
+        return g_event
+
+    def update_event(self, event: dict, g_event: dict, category: str = "general") -> dict:
+        """
+        Updates the details of a given Google Calendar event to match the info in `event`
+
+        :param event: Source info
+        :param g_event: Calendar event to update
+        :param category: Calendar category the event is from
+        :return: Updated Calendar event
+        """
+        g_event_data = self.g_event_from_event(event, category)
+        g_event_data['id'] = g_event['id']
+
+        g_event = self.service.events()\
+            .update(calendarId=calendar_ids[category], eventId=g_event['id'], body=g_event_data)\
+            .execute()
+        print(f"Event updated in {category} calendar: {g_event.get('htmlLink')}")
+        return g_event
+
+    @staticmethod
+    def _select_event(g_events: list[dict], event: dict, method: str) -> dict | None:
+        """
+        Automatically or manually selects a Calendar event from a list.
+
+        :param g_events: Events to choose from
+        :param event: Source info to look for (mainly name)
+        :param method: What method was used to find this list, to print
+        :return: Selected event
+        """
+        if not g_events:
+            return None
+
+        auto_choice = None
+        for i, event_ob in enumerate(g_events):
+            if event['name'] in event_ob['summary']:
+                auto_choice = i
+                break
+
+        if auto_choice is not None:
+            print(f"Found event using {method}")
+            return g_events[auto_choice]
+
+        print("Select event: (0 for not included)")
+        for i, event_ob in enumerate(g_events):
+            print(f"  {i + 1}: {event_ob['summary']}")
+
+        choice = int(input("Pick"))
+        if 0 < choice <= len(g_events):
+            print(f"Found event using {method}")
+            return g_events[choice - 1]
+
+    def find_event(self, event: dict, category: str = "general") -> dict | None:
+        """
+        Search the calendar identified by `category` for a match of `event`.
+
+        :param event: Source event to find a match for
+        :param category: Calendar to search in
+        :return: Event, if found
+        """
+
+        supposed_id = self.event_id(event)
         try:
-            event_ob = self.service.events().get(calendarId=calendar_ids['general'], eventId=id).execute()
+            event_ob = self.service.events().get(calendarId=calendar_ids['general'], eventId=supposed_id).execute()
             print("Found event using id")
             return event_ob
         except HttpError:
             pass
 
+        print('Getting events based on event time')
         start_time = event['start'].isoformat()
         end_time = event['end'].isoformat()
-        print('Getting events based on event time')
-        events_result = self.service.events().list(calendarId=calendar_ids['general'], maxResults=10,
+        events_result = self.service.events().list(calendarId=calendar_ids[category], maxResults=10,
                                                    timeMin=start_time, timeMax=end_time,
                                                    singleEvents=True, orderBy='startTime').execute()
         events = events_result.get('items', [])
 
-        if events:
-            print("Select event:")
-            for i, event_ob in enumerate(events):
-                print(f"  {i + 1}: {event_ob['summary']}")
-
-            choice = int(input("Pick"))
-            if 0 < choice <= len(events):
-                print("Found event using time")
-                return events[choice - 1]
+        chosen_event = self._select_event(events, event, "time")
+        if chosen_event is not None:
+            return chosen_event
 
         print('Getting events based on search query')
         now = datetime.datetime.utcnow().isoformat() + 'Z'
@@ -90,20 +186,19 @@ class CalendarAdapter:
                                                    singleEvents=True, orderBy='startTime').execute()
         events = events_result.get('items', [])
 
-        if events:
-            print("Select event:")
-            for i, event_ob in enumerate(events):
-                print(f"  {i + 1}: {event_ob['summary']}")
-
-            choice = int(input("Pick"))
-            if 0 < choice <= len(events):
-                print("Found event using time")
-                return events[choice - 1]
+        chosen_event = self._select_event(events, event, "search")
+        if chosen_event is not None:
+            return chosen_event
 
         return None
 
 
 def get_service() -> Resource:
+    """
+    Do authorization and get a resource object.
+
+    :return: Calendar resource
+    """
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -146,7 +241,7 @@ def main():
     try:
         service = get_service()
 
-        get_calendars(service)
+        calendars = get_calendars(service)
 
         # Call the Calendar API
         now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time

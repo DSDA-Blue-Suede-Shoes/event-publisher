@@ -183,7 +183,8 @@ if __name__ == '__main__':
 
     event = get_events()
 
-    # calendar = CalendarAdapter()
+    calendar = CalendarAdapter()
+    g_events = calendar.do_event(event)
     # g_event = calendar.find_event(event)
     # calendar.create_event(event)
 

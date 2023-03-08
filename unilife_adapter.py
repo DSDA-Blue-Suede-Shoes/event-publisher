@@ -4,6 +4,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.action_chains import ActionChains
 import requests
+import base64
 from bs4 import BeautifulSoup
 from datetime import datetime
 from utils import DEFAULT_TZ
@@ -55,37 +56,45 @@ class UnilifeAdapter:
         if not self.logged_in:
             self.login()
 
-        self.driver.get('https://app.uni-life.nl/event/create')
+        # Get a creation token. Not sure if and why this is necessary.
+        r = self.driver.request('GET', "https://app.uni-life.nl/event/create")
+        soup = BeautifulSoup(r.text, 'html.parser')
+        token_input = soup.find("input", {'name': '_token'})
+        token = token_input.get('value')
 
-        WebDriverWait(self.driver, 10).until(
-            expected_conditions.presence_of_element_located((By.XPATH, "//input[@name='name']"))
-        )
+        # Create form data
+        with open("event-image.jpg", "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read())
 
-        self.driver.find_element(By.XPATH, "//input[@name='name']").send_keys(event['name'])
-        self.driver.find_element(By.XPATH, "//textarea[@name='description']").send_keys(event['content'])
-        self.driver.find_element(By.XPATH, "//vue-autocomplete[1]//button").click()  # Select all universities
-        self.driver.find_element(By.XPATH, "//input[@name='url']").send_keys(event['link'])
-        self.driver.find_element(By.XPATH, "//input[@name='location_name']").send_keys(event['venue'])
-        self.driver.find_element(By.XPATH, "//input[@name='location']").send_keys(event['venue'])
-        self.driver.find_element(By.CLASS_NAME, "pac-target-input").send_keys(event['address'])
-        self.driver.find_element(By.XPATH, "//input[@name='startdate']").send_keys(event['start_date'])  # fixme, Not working
-        self.driver.find_element(By.XPATH, "//input[@name='enddate']").send_keys(event['end_date'])  # fixme, Not working
-        self.driver.find_element(By.XPATH, "//input[@name='starttime[hours]']").send_keys(event['start'].hour)
-        self.driver.find_element(By.XPATH, "//input[@name='starttime[minutes]']").send_keys(event['start'].minute)
-        self.driver.find_element(By.XPATH, "//input[@name='endtime[hours]']").send_keys(event['end'].hour)
-        self.driver.find_element(By.XPATH, "//input[@name='endtime[minutes]']").send_keys(event['end'].minute)
-        interests_input = self.driver.find_element(By.XPATH, "//vue-autocomplete[2]//input")
-        interests_input.click()
-        interests_input.send_keys("dance")
-        self.driver.find_element(By.XPATH, "//vue-autocomplete[2]//input[@type='checkbox']").click()
-        interests_input.click()
-        interests_input.send_keys("party")
-        self.driver.find_element(By.XPATH, "//vue-autocomplete[2]//input[@type='checkbox']").click()
-        link_text_field = self.driver.find_element(By.XPATH, "//label[8]/vue-autocomplete")
-        link_text_field.click()
-        link_text_field.find_element(By.XPATH, "//div[@class='results']/ul/li[1]").click()
-
-        pass
+        values = {
+            "_token":               token,
+            "name":                 event['name'],
+            "description":          event['content'],
+            "event_type_id":        1,
+            "association":          331,
+            "universities[]":       8,
+            "interests[]":          [64, 44],
+            "url":                  event['link'],
+            "button_text":          1,
+            "location_name":        event['venue'],
+            "location":             event['venue'],
+            "location_address":     event['address'],
+            'eventimage[img_source]':           encoded_string,
+            "eventimage[img_discover_big]":     '{"width":1158,"height":1006,"left":181,"top":0}',
+            "eventimage[img_discover_small]":   '{"width":1835,"height":1006,"left":42,"top":0}',
+            "eventimage[img_card]":             '{"width":1635,"height":1006,"left":79,"top":0}',
+            "eventimage[img_details]":          '{"width":1424,"height":1006,"left":92,"top":0}',
+            "startdate":            event['start'].strftime("%d-%m-%Y"),
+            "starttime[hours]":     event['start'].hour,
+            "starttime[minutes]":   event['start'].minute,
+            "enddate":              event['end'].strftime("%d-%m-%Y"),
+            "endtime[hours]":       event['end'].hour,
+            "endtime[minutes]":     event['end'].minute,
+            "visibility":           "public"
+        }
+        # Post event
+        posted = self.driver.request('POST', "https://app.uni-life.nl/event/create", data=values)
+        return posted.status_code == 200
 
     def update_event(self, unilife_event_ob, event):
         pass

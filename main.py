@@ -186,8 +186,6 @@ if __name__ == '__main__':
 
     calendar = CalendarAdapter()
     g_events = calendar.do_event(event)
-    # g_event = calendar.find_event(event)
-    # calendar.create_event(event)
 
     PATH = 'C:\\Program Files\\Python311\\Scripts\\geckodriver.exe'  # Same Directory as Python Program
     options = Options()

@@ -196,26 +196,7 @@ if __name__ == '__main__':
 
     unilife_adapter = UnilifeAdapter(driver, UNILIFE_ID, UNILIFE_PASSWORD)
     unilife_adapter.login()
-    unilife_events = unilife_adapter.get_events()
-
-    i = 0
-    events_to_display = 10
-    if unilife_events:
-        print("Select event to edit (0 to create new):")
-        for i, event_ob in enumerate(unilife_events):
-            print(f"  {i + 1}: {event_ob['name']}")
-            if i == events_to_display-1:
-                break
-
-        choice = int(input("Pick"))
-        if 0 < choice <= min(len(unilife_events), events_to_display):
-            event_ob = unilife_events[choice-1]
-            print(f"Choose {event_ob['name']}")
-            unilife_adapter.update_event(event_ob, event)
-        else:
-            unilife_adapter.create_event(event)
-    else:
-        unilife_adapter.create_event(event)
+    unilife_success = unilife_adapter.do_event(event)
 
     driver.get("https://www.facebook.com/")
     # time.sleep(1)

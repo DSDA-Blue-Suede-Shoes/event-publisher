@@ -1,6 +1,7 @@
 import warnings
 
 from selenium import webdriver
+from seleniumrequests import Firefox
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service
@@ -193,19 +194,24 @@ if __name__ == '__main__':
     options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
 
     service = Service(executable_path=PATH)
-    driver = webdriver.Firefox(service=service, options=options)
+    driver = Firefox(service=service, options=options)
 
     unilife_adapter = UnilifeAdapter(driver, UNILIFE_ID, UNILIFE_PASSWORD)
     unilife_adapter.login()
     unilife_events = unilife_adapter.get_events()
+
+    i = 0
+    events_to_display = 10
     if unilife_events:
         print("Select event to edit (0 to create new):")
         for i, event_ob in enumerate(unilife_events):
             print(f"  {i + 1}: {event_ob['name']}")
+            if i == events_to_display-1:
+                break
 
         choice = int(input("Pick"))
-        if 0 < choice <= len(unilife_events):
-            event_ob = unilife_events[choice]
+        if 0 < choice <= min(len(unilife_events), events_to_display):
+            event_ob = unilife_events[choice-1]
             print(f"Choose {event_ob['name']}")
             unilife_adapter.update_event(event_ob, event)
         else:

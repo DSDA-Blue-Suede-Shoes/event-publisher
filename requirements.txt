@@ -6,3 +6,4 @@ google-api-python-client==2.80.0
 google-auth-httplib2==0.1.0
 google-auth-oauthlib==1.0.0
 pytz==2022.7.1
+selenium-requests==2.0.3

@@ -128,3 +128,5 @@ dmypy.json
 event-image.jpg
 credentials.json
 token.json
+
+tmp/

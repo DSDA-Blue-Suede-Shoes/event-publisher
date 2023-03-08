@@ -1,23 +1,16 @@
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
+from seleniumrequests import Firefox
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.firefox.webdriver import WebDriver
-from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
 import requests
 from bs4 import BeautifulSoup
-import time
-import os
 from datetime import datetime
 from utils import DEFAULT_TZ
 
 
 class UnilifeAdapter:
-    def __init__(self, driver: WebDriver, username, password):
+    def __init__(self, driver: Firefox, username, password):
         self.driver = driver
         self.logged_in = False
         self.__username = username
@@ -42,21 +35,21 @@ class UnilifeAdapter:
         if not self.logged_in:
             self.login()
 
-        self.driver.get('https://app.uni-life.nl/event')
+        r = self.driver.request('GET', "https://app.uni-life.nl/event",
+                                params={'direction': 'asc', 'search': '', 'filter': '', 'page': 0},
+                                headers={"Accept": "application/json, text/plain, */*"})
+        unilife_events = r.json()['body']
+        return_events = []
 
-        WebDriverWait(self.driver, 10).until(
-            expected_conditions.presence_of_element_located((By.XPATH, "//tbody/tr//span"))
-        )
-
-        rows = self.driver.find_elements(By.XPATH, "//tbody/tr")
-        events = []
-        for row in rows:
-            name = row.find_element(By.XPATH, "td[@data-label='Title']").text
-            full_text = row.text
-            link = row.find_element(By.XPATH, "td[@data-label='Actions']//li[1]/a").get_property('href')
-            events.append({'name': name, 'full_text': full_text, 'link': link})
-        pass
-        return events
+        for event in unilife_events:
+            return_events.append({
+                'name': event['content'][0]['value'],
+                'location': event['content'][3]['value'],
+                'start_date': event['content'][4]['value'],
+                'end_date': event['content'][5]['value'],
+                'link': event['metadata']['actions'][0]['url'],
+            })
+        return return_events
 
     def create_event(self, event: dict):
         if not self.logged_in:

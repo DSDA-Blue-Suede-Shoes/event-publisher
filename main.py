@@ -1,23 +1,14 @@
 import warnings
 
-from selenium import webdriver
 from seleniumrequests import Firefox
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.common.action_chains import ActionChains
 import requests
 from bs4 import BeautifulSoup
-import time
 import os
-import pyotp
 from datetime import datetime
-from calendar_adapter import CalendarAdapter
 from facebook_adapter import FacebookAdapter
+from text_transforms import trim_list, get_list, render_unicode, render_whatsapp
 from unilife_adapter import UnilifeAdapter
 from utils import DEFAULT_TZ
 
@@ -58,6 +49,11 @@ def get_events():
     categories = [cat.text for cat in categories_wrapper.find_all('a')]
     event['categories'] = categories
 
+    content_soup = BeautifulSoup(event['content'], 'html.parser')
+    content_text_list = trim_list(get_list(content_soup.children))
+    event['content-unicode'] = render_unicode(content_text_list)
+    event['content-whatsapp'] = render_whatsapp(content_text_list)
+
     image_url = soup.find("img", "wp-post-image")['src']
     r = requests.get(image_url, stream=True)
     if r.status_code == 200:
@@ -97,8 +93,6 @@ if __name__ == '__main__':
     unilife_adapter = UnilifeAdapter(driver, UNILIFE_ID, UNILIFE_PASSWORD)
     unilife_adapter.login()
     unilife_success = unilife_adapter.do_event(event)
-
-    driver.get("https://www.facebook.com/")
 
     facebook_adapter = FacebookAdapter(driver, FACEBOOK_ID, FACEBOOK_PASSWORD, FACEBOOK_TOTP)
     facebook_adapter.login()

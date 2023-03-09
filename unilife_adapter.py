@@ -120,7 +120,7 @@ class UnilifeAdapter:
         values = {
             "_token": token,
             "name": event['name'],
-            "description": event['content'],
+            "description": event['content-unicode'],
             "event_type_id": 1,
             "association": 331,
             "universities[]": 8,

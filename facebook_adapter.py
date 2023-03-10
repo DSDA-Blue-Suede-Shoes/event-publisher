@@ -158,7 +158,7 @@ class FacebookAdapter:
         details_field.send_keys(event_info['content-unicode'])
 
         # Hit create event
-        self.driver.find_element(By.XPATH, '//label[@aria-label="Evenement maken"]').click()
+        self.driver.find_element(By.XPATH, '//div[@aria-label="Evenement maken"]').click()
 
         WebDriverWait(self.driver, 10).until(
             expected_conditions.url_changes("https://www.facebook.com/events/create/")
@@ -166,7 +166,7 @@ class FacebookAdapter:
 
         long_url = self.driver.current_url
         print(f"Facebook: Created new event at {long_url}")
-        self.driver.find_element(By.XPATH, '//label[@aria-label="Delen"]').click()
+        self.driver.find_element(By.XPATH, '//div[@aria-label="Delen"]').click()
         short_url = self.driver.find_element(By.XPATH, '//span[contains(text(), "fb.me")]').text
         print(f"          Short URL is {short_url}")
 

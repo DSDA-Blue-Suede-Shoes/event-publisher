@@ -1,6 +1,5 @@
 import datetime
 import os.path
-import base64
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -8,6 +7,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.discovery import Resource
+import base32hex
 
 from utils import DEFAULT_TZ, DEFAULT_TZ_STR
 
@@ -31,7 +31,7 @@ class CalendarAdapter:
 
     @staticmethod
     def event_id(event: dict) -> str:
-        return base64.b32encode(event['slug'].encode()).decode()
+        return base32hex.b32encode(event['slug'].encode()).lower()[:-3]
 
     @staticmethod
     def g_event_from_event(event: dict, category: str = "") -> dict:
@@ -158,10 +158,9 @@ class CalendarAdapter:
         :param category: Calendar to search in
         :return: Event, if found
         """
-
         supposed_id = self.event_id(event)
         try:
-            event_ob = self.service.events().get(calendarId=calendar_ids['general'], eventId=supposed_id).execute()
+            event_ob = self.service.events().get(calendarId=calendar_ids[category], eventId=supposed_id).execute()
             print("Found event using id")
             return event_ob
         except HttpError:
@@ -181,7 +180,7 @@ class CalendarAdapter:
 
         print('Getting events based on search query')
         now = datetime.datetime.utcnow().isoformat() + 'Z'
-        events_result = self.service.events().list(calendarId=calendar_ids['general'], maxResults=10,
+        events_result = self.service.events().list(calendarId=calendar_ids[category], maxResults=10,
                                                    timeMin=now, q=event['name'],
                                                    singleEvents=True, orderBy='startTime').execute()
         events = events_result.get('items', [])

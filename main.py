@@ -7,6 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 import os
 from datetime import datetime
+from calendar_adapter import CalendarAdapter
 from facebook_adapter import FacebookAdapter
 from text_transforms import trim_list, get_list, render_unicode, render_whatsapp
 from unilife_adapter import UnilifeAdapter
@@ -40,6 +41,7 @@ def get_events():
     event['start'] = DEFAULT_TZ.localize(datetime.strptime(f"{event['start_date']} {event['start_time']}", "%Y-%m-%d %H:%M"))
     event['end'] = DEFAULT_TZ.localize(datetime.strptime(f"{event['end_date']} {event['end_time']}", "%Y-%m-%d %H:%M"))
     event['venue'] = soup.find("dd", "tribe-venue").text.strip()
+    # Fixme, not all these are always defined
     event['address'] = f'{soup.find("span", "tribe-street-address").text.strip()}, {soup.find("span", "tribe-postal-code").text.strip()} {soup.find("span", "tribe-locality").text.strip()}'
 
     # content = soup.find("div", "tribe-events-content").text.strip()

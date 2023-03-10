@@ -78,7 +78,7 @@ class UnilifeAdapter:
             print(f"Unilife: Found event automatically!")
             return unilife_events[auto_choice]
 
-        print("Unilife: Select event: (0 for not included)")
+        print("Unilife: Select event to update:\n  0 for not included, create new one")
         i = 0
         events_to_display = 10
         for i, unilife_event in enumerate(unilife_events):

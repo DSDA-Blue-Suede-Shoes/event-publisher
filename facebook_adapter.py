@@ -63,20 +63,25 @@ class FacebookAdapter:
             print("Timeout for automatic continuation")
             input("Press enter to continue manually")
 
+        # Do profile switch, this goes faster on a simple page like this for some reason.
+        self.driver.get("https://www.facebook.com/events/create/")
+
+        # Click profile picture
+        profile_svg = self.driver.find_element(By.XPATH, '//*[name()="svg" and @aria-label="Je profiel"]')
+        profile_svg.click()
+        # Click switch profile
+        profile_switch = self.driver.find_element(By.XPATH, '//div[@aria-label="Van profiel wisselen"]')
+        profile_switch.click()
+
+        time.sleep(0.5)
+        WebDriverWait(self.driver, 10).until(
+            expected_conditions.url_to_be("https://www.facebook.com/events/create/")
+        )
+
         self.logged_in = True
 
     def create_event(self, event_info: dict):
         self.driver.get("https://www.facebook.com/events/create/")
-        pass
-        profile_svg = self.driver.find_element(By.XPATH, '//*[name()="svg" and @aria-label="Je profiel"]')
-        profile_svg.click()
-        profile_switch = self.driver.find_element(By.XPATH, '//div[@aria-label="Van profiel wisselen"]')
-        profile_switch.click()
-
-        time.sleep(2)
-        WebDriverWait(self.driver, 10).until(
-            expected_conditions.url_to_be("https://www.facebook.com/events/create/")
-        )
         time.sleep(0.5)
 
         filename = os.path.join(os.getcwd(), "event-image.jpg")

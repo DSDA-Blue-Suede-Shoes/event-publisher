@@ -97,7 +97,7 @@ class CalendarAdapter:
         g_event_data['id'] = self.event_id(event)
 
         g_event = self.service.events().insert(calendarId=calendar_ids[category], body=g_event_data).execute()
-        print(f"Event created in {category} calendar: {g_event.get('htmlLink')}")
+        print(f"Calendar: Event created in {category} calendar: {g_event.get('htmlLink')}")
         return g_event
 
     def update_event(self, event: dict, g_event: dict, category: str = "general") -> dict:
@@ -115,7 +115,7 @@ class CalendarAdapter:
         g_event = self.service.events()\
             .update(calendarId=calendar_ids[category], eventId=g_event['id'], body=g_event_data)\
             .execute()
-        print(f"Event updated in {category} calendar: {g_event.get('htmlLink')}")
+        print(f"Calendar: Event updated in {category} calendar: {g_event.get('htmlLink')}")
         return g_event
 
     @staticmethod
@@ -129,6 +129,7 @@ class CalendarAdapter:
         :return: Selected event
         """
         if not g_events:
+            print("nothing")
             return None
 
         auto_choice = None
@@ -138,16 +139,16 @@ class CalendarAdapter:
                 break
 
         if auto_choice is not None:
-            print(f"Found event using {method}")
+            print("found event automatically")
             return g_events[auto_choice]
 
-        print("Select event: (0 for not included)")
+        print("\nCalendar: Select event to update:\n   0 for not included, create new one")
         for i, event_ob in enumerate(g_events):
             print(f"  {i + 1}: {event_ob['summary']}")
 
-        choice = int(input("Pick"))
+        choice = int(input("Pick: "))
         if 0 < choice <= len(g_events):
-            print(f"Found event using {method}")
+            print(f"Calendar: Found event using {method}")
             return g_events[choice - 1]
 
     def find_event(self, event: dict, category: str = "general") -> dict | None:
@@ -161,12 +162,12 @@ class CalendarAdapter:
         supposed_id = self.event_id(event)
         try:
             event_ob = self.service.events().get(calendarId=calendar_ids[category], eventId=supposed_id).execute()
-            print("Found event using id")
+            print("Calendar: Found event using id")
             return event_ob
         except HttpError:
             pass
 
-        print('Getting events based on event time')
+        print('Calendar: Searching events based on event time... ', end='')
         start_time = event['start'].isoformat()
         end_time = event['end'].isoformat()
         events_result = self.service.events().list(calendarId=calendar_ids[category], maxResults=10,
@@ -178,7 +179,7 @@ class CalendarAdapter:
         if chosen_event is not None:
             return chosen_event
 
-        print('Getting events based on search query')
+        print('Calendar: Searching events based on search query... ')
         now = datetime.datetime.utcnow().isoformat() + 'Z'
         events_result = self.service.events().list(calendarId=calendar_ids[category], maxResults=10,
                                                    timeMin=now, q=event['name'],
@@ -220,7 +221,7 @@ def get_service() -> Resource:
         return build('calendar', 'v3', credentials=creds)
 
     except HttpError as error:
-        print(f'An error occurred: {error}')
+        print(f'Calendar: An error occurred: {error}')
 
 
 def get_calendars(service: Resource):
@@ -229,7 +230,7 @@ def get_calendars(service: Resource):
         calendar_list = calendar_list_wrap.get('items', [])
         return calendar_list
     except HttpError as error:
-        print(f'An error occurred: {error}')
+        print(f'Calendar: An error occurred: {error}')
         return []
 
 
@@ -244,14 +245,14 @@ def main():
 
         # Call the Calendar API
         now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
-        print('Getting the upcoming 10 events')
+        print('Calendar: Getting the upcoming 10 events')
         events_result = service.events().list(calendarId=calendar_ids['general'], timeMin=now,
                                               maxResults=10, singleEvents=True,
                                               orderBy='startTime').execute()
         events = events_result.get('items', [])
 
         if not events:
-            print('No upcoming events found.')
+            print('Calendar: No upcoming events found.')
             return
 
         # Prints the start and name of the next 10 events
@@ -260,7 +261,7 @@ def main():
             print(start, event['summary'])
 
     except HttpError as error:
-        print(f'An error occurred: {error}')
+        print(f'Calendar: An error occurred: {error}')
 
 
 if __name__ == '__main__':

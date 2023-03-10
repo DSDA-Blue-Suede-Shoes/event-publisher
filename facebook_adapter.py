@@ -9,42 +9,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.remote.webelement import WebElement
 import pyotp
-import base64
-from bs4 import BeautifulSoup
-from typing import BinaryIO
-
-
-def attribute_match(el: WebElement, attribute: str, match_list: list):
-    """
-    Checks if a given element has an attribute value matching to something in match_list.
-
-    :param el: Element to check
-    :param attribute: Attribute name
-    :param match_list: Attribute match strings
-    :return: Whether attribute has matching value
-    """
-    aria_attribute = el.get_attribute(attribute)
-    if aria_attribute is None:
-        return False
-    for match in match_list:
-        if match in aria_attribute:
-            return True
-    return False
-
-
-def find_element_by_attribute(driver: Firefox, by: By, el_search: str, attribute: str, match_list: list):
-    """
-    Finds the first element that has an attribute value matching to something in match_list.
-
-    :param driver: Selenium driver
-    :param by: What to initially search by
-    :param el_search: Element search string
-    :param attribute: Attribute name
-    :param match_list: Attribute match strings
-    :return:
-    """
-    els = driver.find_elements(by, el_search)
-    return next(filter(lambda el: attribute_match(el, attribute, match_list), els), None)
 
 
 class FacebookAdapter:
@@ -59,10 +23,8 @@ class FacebookAdapter:
         if self.logged_in:
             return
         self.driver.get("https://www.facebook.com/")
-        buttons = self.driver.find_elements(By.TAG_NAME, "button")
-        essential_cookies_button = first = next(
-            filter(lambda button: button.text == 'Only allow essential cookies', buttons), None)
-        login_button = first = next(filter(lambda button: button.text == 'Log in', buttons), None)
+        essential_cookies_button = self.driver.find_element(By.XPATH, '//button[contains(text(), "Only allow essential cookies")]')
+        login_button = self.driver.find_element(By.XPATH, '//button[contains(text(), "Login")]')
         email_field = self.driver.find_element(By.ID, "email")
         password_field = self.driver.find_element(By.ID, "pass")
 

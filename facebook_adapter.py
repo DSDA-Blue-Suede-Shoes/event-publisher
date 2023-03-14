@@ -92,6 +92,10 @@ class FacebookAdapter(AdapterBase):
         """
         api_response = requests.get("https://graph.facebook.com/v16.0/204304653318353/events",
                                     {"access_token": self.__graph_api_token})
+        # Todo: get long lived token
+        # https://developers.facebook.com/docs/facebook-login/guides/access-tokens/get-long-lived
+        if api_response.status_code == 400:
+            raise Exception(f"Facebook Graph API error: {api_response.json()['error']['message']}")
         return_events = api_response.json()['data']
         return return_events
 

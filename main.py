@@ -52,7 +52,7 @@ def get_event_info(event: dict) -> dict:
     content_soup = BeautifulSoup(event['content'], 'html.parser')
     content_text_list = trim_list(get_list(content_soup.children))
     event['content-unicode'] = render_unicode(content_text_list)
-    event['content-whatsapp'] = render_whatsapp(content_text_list)
+    event['content-whatsapp'] = render_whatsapp(content_text_list) + f"\n\nAll details:\n{event['link']}"
 
     image_url = soup.find("img", "wp-post-image")['src']
     r = requests.get(image_url, stream=True)
@@ -145,6 +145,10 @@ if __name__ == '__main__':
                 facebook_adapter = FacebookAdapter(driver, FACEBOOK_ID, FACEBOOK_PASSWORD,
                                                    FACEBOOK_TOTP, FACEBOOK_GRAPH_API_TOKEN)
             facebook_adapter.do_event(event)
+
+        if ask_confirmation("Do you want a WhatsApp share message?"):
+            print()  # New line
+            print(event['content-whatsapp'])
 
     if driver is not None:
         driver.quit()

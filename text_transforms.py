@@ -40,6 +40,7 @@ def trim_list(element_list: list) -> list:
     return element_list
 
 
+# Todo: process links
 def get_list(nodes: Iterable[Tag] | Iterable[PageElement], node_list: list = None, properties: dict = None):
     """
     Takes a collection of nodes and uses that to build a list of text elements with properties.

@@ -212,12 +212,9 @@ class FacebookAdapter:
             expected_conditions.url_changes(edit_url)
         )
 
-        long_url = self.driver.current_url
+        long_url, short_url = self.get_event_urls()
         print(f"Facebook: Edited event at {long_url}")
-        self.driver.find_element(By.XPATH, '//div[@aria-label="Delen"]').click()
-        short_url = self.driver.find_element(By.XPATH, '//span[contains(text(), "fb.me")]').text
         print(f"          Short URL is {short_url}")
-
         return long_url, short_url
 
     def create_event(self, event_info: dict):
@@ -271,10 +268,13 @@ class FacebookAdapter:
             expected_conditions.url_changes("https://www.facebook.com/events/create/")
         )
 
-        long_url = self.driver.current_url
+        long_url, short_url = self.get_event_urls()
         print(f"Facebook: Created new event at {long_url}")
+        print(f"          Short URL is {short_url}")
+        return long_url, short_url
+
+    def get_event_urls(self) -> tuple[str, str]:
+        long_url = self.driver.current_url
         self.driver.find_element(By.XPATH, '//div[@aria-label="Delen"]').click()
         short_url = self.driver.find_element(By.XPATH, '//span[contains(text(), "fb.me")]').text
-        print(f"          Short URL is {short_url}")
-
         return long_url, short_url

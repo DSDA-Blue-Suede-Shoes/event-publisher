@@ -12,11 +12,12 @@ from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.remote.webelement import WebElement
 import pyotp
 
+from adapter_base import AdapterBase, login_required
 
-class FacebookAdapter:
+
+class FacebookAdapter(AdapterBase):
     def __init__(self, driver: Firefox, username: str, password: str, totp: str, graph_api_token: str):
-        self.driver = driver
-        self.logged_in = False
+        super().__init__(driver, "Facebook")
         self.__username = username
         self.__password = password
         self.__totp = totp
@@ -94,60 +95,8 @@ class FacebookAdapter:
         return_events = api_response.json()['data']
         return return_events
 
-    @staticmethod
-    def _select_event(facebook_events: list[dict], event: dict) -> dict | None:
-        """
-        Automatically or manually selects a Facebook event from a list.
-
-        :param facebook_events: Events to choose from
-        :param event: Source info to look for (mainly name)
-        :return: Selected event
-        """
-        if not facebook_events:
-            return None
-
-        auto_choice = None
-        for i, facebook_event in enumerate(facebook_events):
-            if event['name'] in facebook_event['name']:
-                auto_choice = i
-                break
-
-        if auto_choice is not None:
-            print(f"Facebook: Found event automatically!")
-            return facebook_events[auto_choice]
-
-        print("Facebook: Select event to update:\n  0 for not included, create new one")
-
-        events_to_display = 10
-        for i, facebook_event in enumerate(facebook_events):
-            print(f"  {i + 1}: {facebook_event['name']}")
-            if i == events_to_display - 1:
-                break
-
-        choice = int(input("Pick"))
-        if 0 < choice <= min(len(facebook_events), events_to_display):
-            print(f"Facebook: Chosen {facebook_events[choice - 1]['name']}")
-            return facebook_events[choice - 1]
-
-        return None
-
-    def do_event(self, event: dict) -> tuple[str, str]:
-        """
-        Make sure a given event is present (created/updated) on Facebook.
-
-        :param event: Event information
-        :return: New/updated event
-        """
-        facebook_events = self.get_events()
-        existing_event = self._select_event(facebook_events, event)
-        if existing_event:
-            return self.update_event(event, existing_event)
-        return self.create_event(event)
-
+    @login_required
     def update_event(self, event_info: dict, existing_event: dict):
-        if not self.logged_in:
-            self.login()
-
         edit_url = f"https://www.facebook.com/events/edit/{existing_event['id']}"
         self.driver.get(edit_url)
         time.sleep(0.5)
@@ -217,6 +166,7 @@ class FacebookAdapter:
         print(f"          Short URL is {short_url}")
         return long_url, short_url
 
+    @login_required
     def create_event(self, event_info: dict):
         self.driver.get("https://www.facebook.com/events/create/")
         time.sleep(0.5)
@@ -273,6 +223,7 @@ class FacebookAdapter:
         print(f"          Short URL is {short_url}")
         return long_url, short_url
 
+    @login_required
     def get_event_urls(self) -> tuple[str, str]:
         long_url = self.driver.current_url
         self.driver.find_element(By.XPATH, '//div[@aria-label="Delen"]').click()

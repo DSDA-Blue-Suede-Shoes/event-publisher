@@ -8,11 +8,12 @@ import base64
 from bs4 import BeautifulSoup
 from typing import BinaryIO
 
+from adapter_base import AdapterBase, login_required
 
-class UnilifeAdapter:
+
+class UnilifeAdapter(AdapterBase):
     def __init__(self, driver: Firefox, username: str, password: str):
-        self.driver = driver
-        self.logged_in = False
+        super().__init__(driver, "Unilife")
         self.__username = username
         self.__password = password
 
@@ -31,15 +32,13 @@ class UnilifeAdapter:
         )
         self.logged_in = True
 
+    @login_required
     def get_events(self):
         """
         List events present in our Unilife account
 
         :return: List of events
         """
-        if not self.logged_in:
-            self.login()
-
         r = self.driver.request('GET', "https://app.uni-life.nl/event",
                                 params={'direction': 'asc', 'search': '', 'filter': '', 'page': 0},
                                 headers={"Accept": "application/json, text/plain, */*"})
@@ -55,56 +54,6 @@ class UnilifeAdapter:
                 'link': event['metadata']['actions'][0]['url'],
             })
         return return_events
-
-    @staticmethod
-    def _select_event(unilife_events: list[dict], event: dict) -> dict | None:
-        """
-        Automatically or manually selects a Unilife event from a list.
-
-        :param unilife_events: Events to choose from
-        :param event: Source info to look for (mainly name)
-        :return: Selected event
-        """
-        if not unilife_events:
-            return None
-
-        auto_choice = None
-        for i, unilife_event in enumerate(unilife_events):
-            if event['name'] in unilife_event['name']:
-                auto_choice = i
-                break
-
-        if auto_choice is not None:
-            print(f"Unilife: Found event automatically!")
-            return unilife_events[auto_choice]
-
-        print("Unilife: Select event to update:\n  0 for not included, create new one")
-
-        events_to_display = 10
-        for i, unilife_event in enumerate(unilife_events):
-            print(f"  {i + 1}: {unilife_event['name']}")
-            if i == events_to_display-1:
-                break
-
-        choice = int(input("Pick"))
-        if 0 < choice <= min(len(unilife_events), events_to_display):
-            print(f"Unilife: Chosen {unilife_events[choice - 1]['name']}")
-            return unilife_events[choice - 1]
-
-        return None
-
-    def do_event(self, event: dict) -> bool:
-        """
-        Make sure a given event is present (created/updated) on Unilife.
-
-        :param event: Event information
-        :return: New/updated event
-        """
-        unilife_events = self.get_events()
-        existing_event = self._select_event(unilife_events, event)
-        if existing_event:
-            return self.update_event(event, existing_event)
-        return self.create_event(event)
 
     @staticmethod
     def unilife_event_from_event(event: dict, token: str, image: BinaryIO | None) -> dict:

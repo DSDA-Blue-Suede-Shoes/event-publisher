@@ -2,6 +2,8 @@ import warnings
 import sys
 import html
 import os
+from json import loads
+
 import requests
 from datetime import datetime
 
@@ -77,21 +79,38 @@ def create_driver():
     return Firefox(service=service, options=options)
 
 
+def get_config() -> dict:
+    """
+    Get the authentication data from either the credentials.json file, or environment variables.
+
+    :return: Authentication config
+    """
+    try:
+        with open("credentials.json", "r", encoding="utf-8") as f:
+            conf = loads(f.read())
+    except FileNotFoundError as error:
+        print("Could not find credentials.json")
+
+    conf["FACEBOOK_ID"] = os.getenv("FACEBOOK_ID", conf.get("FACEBOOK_ID"))
+    conf["FACEBOOK_PASSWORD"] = os.getenv("FACEBOOK_PASSWORD", conf.get("FACEBOOK_PASSWORD"))
+    conf["FACEBOOK_TOTP"] = os.getenv("FACEBOOK_TOTP", conf.get("FACEBOOK_TOTP"))
+    conf["FACEBOOK_GRAPH_API_TOKEN"] = os.getenv("FACEBOOK_GRAPH_API_TOKEN", conf.get("FACEBOOK_GRAPH_API_TOKEN"))
+    conf["UNILIFE_ID"] = os.getenv("UNILIFE_ID", conf.get("UNILIFE_ID"))
+    conf["UNILIFE_PASSWORD"] = os.getenv("UNILIFE_PASSWORD", conf.get("UNILIFE_PASSWORD"))
+
+    assert conf["FACEBOOK_ID"] is not None
+    assert conf["FACEBOOK_PASSWORD"] is not None
+    assert conf["FACEBOOK_TOTP"] is not None
+    assert conf["FACEBOOK_GRAPH_API_TOKEN"] is not None
+    assert conf["UNILIFE_ID"] is not None
+    assert conf["UNILIFE_PASSWORD"] is not None
+
+    return conf
+
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    FACEBOOK_ID = os.getenv("FACEBOOK_ID")
-    FACEBOOK_PASSWORD = os.getenv("FACEBOOK_PASSWORD")
-    FACEBOOK_TOTP = os.getenv("FACEBOOK_TOTP")
-    FACEBOOK_GRAPH_API_TOKEN = os.getenv("FACEBOOK_GRAPH_API_TOKEN")
-    UNILIFE_ID = os.getenv("UNILIFE_ID")
-    UNILIFE_PASSWORD = os.getenv("UNILIFE_PASSWORD")
-
-    assert FACEBOOK_ID is not None
-    assert FACEBOOK_PASSWORD is not None
-    assert FACEBOOK_TOTP is not None
-    assert FACEBOOK_GRAPH_API_TOKEN is not None
-    assert UNILIFE_ID is not None
-    assert UNILIFE_PASSWORD is not None
+    config = get_config()
 
     print("Event publisher, at your service")
 
@@ -135,15 +154,16 @@ if __name__ == '__main__':
             if driver is None:
                 driver = create_driver()
             if unilife_adapter is None:
-                unilife_adapter = UnilifeAdapter(driver, UNILIFE_ID, UNILIFE_PASSWORD)
+                unilife_adapter = UnilifeAdapter(driver, config["UNILIFE_ID"], config["UNILIFE_PASSWORD"])
             unilife_success = unilife_adapter.do_event(event)
 
         if ask_confirmation("Do you want to put this event on Facebook?"):
             if driver is None:
                 driver = create_driver()
             if facebook_adapter is None:
-                facebook_adapter = FacebookAdapter(driver, FACEBOOK_ID, FACEBOOK_PASSWORD,
-                                                   FACEBOOK_TOTP, FACEBOOK_GRAPH_API_TOKEN)
+                pass
+            facebook_adapter = FacebookAdapter(driver, config["FACEBOOK_ID"], config["FACEBOOK_PASSWORD"],
+                                               config["FACEBOOK_TOTP"], config["FACEBOOK_GRAPH_API_TOKEN"])
             facebook_adapter.do_event(event)
 
         if ask_confirmation("Do you want a WhatsApp share message?"):

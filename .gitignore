@@ -126,6 +126,7 @@ dmypy.json
 .idea
 
 event-image.jpg
+google_api_credentials.json
 credentials.json
 token.json
 

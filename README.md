@@ -4,6 +4,9 @@ This project strives to automate the process of publishing events from the D.S.D
 
 The project is in reasonable usability and documentation state, but not super robust against errors.
 
+_Technical note_  
+Firefox is used as platform for the web automations by Selenium. Have it installed, or change the settings and get the driver for the browser you want.
+
 ## Setting up
 Get a Python environment, e.g. a virtual one:
 

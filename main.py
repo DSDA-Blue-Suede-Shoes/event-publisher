@@ -70,7 +70,7 @@ def get_event_info(event: dict) -> dict:
 
 
 def create_driver():
-    ff_path = 'C:\\Program Files\\Python311\\Scripts\\geckodriver.exe'  # Same Directory as Python Program
+    ff_path = 'geckodriver.exe'  # Same Directory as Python Program
     service = Service(executable_path=ff_path)
 
     options = Options()

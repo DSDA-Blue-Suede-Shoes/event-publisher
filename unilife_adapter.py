@@ -10,7 +10,7 @@ from typing import BinaryIO
 
 
 class UnilifeAdapter:
-    def __init__(self, driver: Firefox, username, password):
+    def __init__(self, driver: Firefox, username: str, password: str):
         self.driver = driver
         self.logged_in = False
         self.__username = username
@@ -79,7 +79,7 @@ class UnilifeAdapter:
             return unilife_events[auto_choice]
 
         print("Unilife: Select event to update:\n  0 for not included, create new one")
-        i = 0
+
         events_to_display = 10
         for i, unilife_event in enumerate(unilife_events):
             print(f"  {i + 1}: {unilife_event['name']}")
@@ -93,7 +93,7 @@ class UnilifeAdapter:
 
         return None
 
-    def do_event(self, event: dict) -> list[dict]:
+    def do_event(self, event: dict) -> bool:
         """
         Make sure a given event is present (created/updated) on Unilife.
 

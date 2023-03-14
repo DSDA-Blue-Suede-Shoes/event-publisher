@@ -82,12 +82,14 @@ if __name__ == '__main__':
     FACEBOOK_ID = os.getenv("FACEBOOK_ID")
     FACEBOOK_PASSWORD = os.getenv("FACEBOOK_PASSWORD")
     FACEBOOK_TOTP = os.getenv("FACEBOOK_TOTP")
+    FACEBOOK_GRAPH_API_TOKEN = os.getenv("FACEBOOK_GRAPH_API_TOKEN")
     UNILIFE_ID = os.getenv("UNILIFE_ID")
     UNILIFE_PASSWORD = os.getenv("UNILIFE_PASSWORD")
 
     assert FACEBOOK_ID is not None
     assert FACEBOOK_PASSWORD is not None
     assert FACEBOOK_TOTP is not None
+    assert FACEBOOK_GRAPH_API_TOKEN is not None
     assert UNILIFE_ID is not None
     assert UNILIFE_PASSWORD is not None
 
@@ -140,8 +142,9 @@ if __name__ == '__main__':
             if driver is None:
                 driver = create_driver()
             if facebook_adapter is None:
-                facebook_adapter = FacebookAdapter(driver, FACEBOOK_ID, FACEBOOK_PASSWORD, FACEBOOK_TOTP)
-            facebook_adapter.create_event(event)
+                facebook_adapter = FacebookAdapter(driver, FACEBOOK_ID, FACEBOOK_PASSWORD,
+                                                   FACEBOOK_TOTP, FACEBOOK_GRAPH_API_TOKEN)
+            facebook_adapter.do_event(event)
 
     if driver is not None:
         driver.quit()

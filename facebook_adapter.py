@@ -14,6 +14,38 @@ import pyotp
 
 from adapter_base import AdapterBase, login_required
 
+graph_api_version = "v16.0"
+page_id = "204304653318353"
+
+
+def get_long_lived_token(config: dict) -> str:
+    """
+    Use the short-lived graph-api access token to get a long-lived page token.
+    Using https://developers.facebook.com/docs/facebook-login/guides/access-tokens/get-long-lived
+
+    :param config: All the secrets
+    :return: Long-lived page token
+    """
+    api_response = requests.get(f"https://graph.facebook.com/{graph_api_version}/oauth/access_token",
+                                {"grant_type": "fb_exchange_token",
+                                 "client_id": config['FACEBOOK_APP_ID'],
+                                 "client_secret": config['FACEBOOK_APP_SECRET'],
+                                 "fb_exchange_token": config['FACEBOOK_GRAPH_API_TOKEN']}).json()
+    long_lived_token = api_response['access_token']
+    api_response = requests.get(f"https://graph.facebook.com/{graph_api_version}/me?fields=id",
+                                {"access_token": config['FACEBOOK_GRAPH_API_TOKEN']}).json()
+    app_scoped_user_id = api_response['id']
+    api_response = requests.get(f"https://graph.facebook.com/{graph_api_version}/{app_scoped_user_id}/accounts",
+                                {"access_token": long_lived_token}).json()
+    pages = api_response['data']
+    page_token = ''
+    for page in pages:
+        if page['name'] == 'DSDA Blue Suede Shoes':
+            page_token = page['access_token']
+    print("Long-lived token (vanilla):", long_lived_token)
+    print("Long-lived page token:", long_lived_token)
+    return page_token
+
 
 class FacebookAdapter(AdapterBase):
     def __init__(self, driver: Firefox, username: str, password: str, totp: str, graph_api_token: str):
@@ -37,7 +69,7 @@ class FacebookAdapter(AdapterBase):
         password_field.send_keys(self.__password)
         login_button.click()
 
-        WebDriverWait(self.driver, 10).until(
+        WebDriverWait(self.driver, 15).until(
             expected_conditions.presence_of_element_located(
                 (By.ID, 'approvals_code'),
             )
@@ -62,7 +94,7 @@ class FacebookAdapter(AdapterBase):
 
         from selenium.common import TimeoutException
         try:
-            WebDriverWait(self.driver, 10).until(expected_conditions.url_to_be("https://www.facebook.com/"))
+            WebDriverWait(self.driver, 15).until(expected_conditions.url_to_be("https://www.facebook.com/"))
         except TimeoutException:
             print("Timeout for automatic continuation")
             input("Press enter to continue manually")
@@ -90,7 +122,7 @@ class FacebookAdapter(AdapterBase):
 
         :return: List of events
         """
-        api_response = requests.get("https://graph.facebook.com/v16.0/204304653318353/events",
+        api_response = requests.get(f"https://graph.facebook.com/{graph_api_version}/{page_id}/events",
                                     {"access_token": self.__graph_api_token})
         # Todo: get long lived token
         # https://developers.facebook.com/docs/facebook-login/guides/access-tokens/get-long-lived
@@ -218,7 +250,7 @@ class FacebookAdapter(AdapterBase):
         # Hit create event
         self.driver.find_element(By.XPATH, '//div[@aria-label="Evenement maken"]').click()
 
-        WebDriverWait(self.driver, 10).until(
+        WebDriverWait(self.driver, 20).until(
             expected_conditions.url_changes("https://www.facebook.com/events/create/")
         )
 

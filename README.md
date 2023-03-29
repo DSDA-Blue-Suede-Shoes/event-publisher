@@ -26,7 +26,8 @@ Get the authentication information for the various platforms. Likely an existing
 * Unilife: Email address and password in `credentials.json`.
 * Facebook:
   * Email address, password, and two-factor authentication info (OTP)
-  * A token for the Graph API. See "Before You Start" on the [getting started page](https://developers.facebook.com/docs/graph-api/get-started#before-you-start).
+  * A token for the Graph API. See "Before You Start" on the [getting started page](https://developers.facebook.com/docs/graph-api/get-started#before-you-start).  
+    This token must be transformed to a [long-lived (page) token](https://developers.facebook.com/docs/facebook-login/guides/access-tokens/get-long-lived). This can be done with the `get_long_lived_token` function in [facebook_adapter.py](facebook_adapter.py). For this you also need the Facebook _app id_ and _secret_.
   * These also in `credentials.json`.
 
 Example `credentials.json`
@@ -37,7 +38,9 @@ Example `credentials.json`
   "FACEBOOK_TOTP": "",
   "UNILIFE_ID": "",
   "UNILIFE_PASSWORD": "",
-  "FACEBOOK_GRAPH_API_TOKEN": ""
+  "FACEBOOK_GRAPH_API_TOKEN": "",
+  "FACEBOOK_APP_ID": "",
+  "FACEBOOK_APP_SECRET": ""
 }
 ```
 

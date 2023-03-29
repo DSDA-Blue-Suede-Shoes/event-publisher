@@ -13,7 +13,7 @@ from selenium.webdriver.firefox.options import Options
 from bs4 import BeautifulSoup
 
 from calendar_adapter import CalendarAdapter
-from facebook_adapter import FacebookAdapter
+from facebook_adapter import FacebookAdapter, get_long_lived_token
 from text_transforms import trim_list, get_list, render_unicode, render_whatsapp
 from unilife_adapter import UnilifeAdapter
 from utils import DEFAULT_TZ, ask_confirmation
@@ -95,6 +95,8 @@ def get_config() -> dict:
     conf["FACEBOOK_PASSWORD"] = os.getenv("FACEBOOK_PASSWORD", conf.get("FACEBOOK_PASSWORD"))
     conf["FACEBOOK_TOTP"] = os.getenv("FACEBOOK_TOTP", conf.get("FACEBOOK_TOTP"))
     conf["FACEBOOK_GRAPH_API_TOKEN"] = os.getenv("FACEBOOK_GRAPH_API_TOKEN", conf.get("FACEBOOK_GRAPH_API_TOKEN"))
+    conf["FACEBOOK_APP_ID"] = os.getenv("FACEBOOK_APP_ID", conf.get("FACEBOOK_APP_ID"))
+    conf["FACEBOOK_APP_SECRET"] = os.getenv("FACEBOOK_APP_SECRET", conf.get("FACEBOOK_APP_SECRET"))
     conf["UNILIFE_ID"] = os.getenv("UNILIFE_ID", conf.get("UNILIFE_ID"))
     conf["UNILIFE_PASSWORD"] = os.getenv("UNILIFE_PASSWORD", conf.get("UNILIFE_PASSWORD"))
 
@@ -113,6 +115,8 @@ if __name__ == '__main__':
     config = get_config()
 
     print("Event publisher, at your service")
+
+    # get_long_lived_token(config)  # Use when you need such a token. Obviously.
 
     events = get_events()
 

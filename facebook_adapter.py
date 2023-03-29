@@ -253,6 +253,7 @@ class FacebookAdapter(AdapterBase):
         WebDriverWait(self.driver, 20).until(
             expected_conditions.url_changes("https://www.facebook.com/events/create/")
         )
+        time.sleep(1)
 
         long_url, short_url = self.get_event_urls()
         print(f"Facebook: Created new event at {long_url}")

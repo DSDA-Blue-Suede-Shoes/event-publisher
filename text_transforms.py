@@ -9,7 +9,7 @@ type_props = {
     "i": {'italic': True},
     "em": {'italic': True},
     "sup": {'super': True},
-    'li': {'line': 1, 'pre_text': "&nbsp;• ", 'push': True},
+    'li': {'line': 1, 'pre_text': " • ", 'push': True},
     'br': {'line': 1, 'push': True},
     'p': {'line': 2, 'push': True},
     'video': {'line': 1, 'push': True},

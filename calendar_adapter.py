@@ -31,7 +31,7 @@ class CalendarAdapter:
 
     @staticmethod
     def event_id(event: dict) -> str:
-        return base32hex.b32encode(event['slug'].encode()).lower()[:-3]
+        return base32hex.b32encode(event['slug'].encode()).lower().rstrip('=')
 
     @staticmethod
     def g_event_from_event(event: dict, category: str = "") -> dict:

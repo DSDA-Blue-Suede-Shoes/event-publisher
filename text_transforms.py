@@ -9,10 +9,15 @@ type_props = {
     "i": {'italic': True},
     "em": {'italic': True},
     "sup": {'super': True},
-    'li': {'line': 1, 'text': "&nbsp;• ", 'push': True},
+    'li': {'line': 1, 'pre_text': "&nbsp;• ", 'push': True},
     'br': {'line': 1, 'push': True},
     'p': {'line': 2, 'push': True},
     'video': {'line': 1, 'push': True},
+    'tr': {'pre_text': "| ",'line': 1, 'push': True},
+    'td': {'post_text': " | "},
+    'th': {'post_text': " | "},
+    'img': {'attr': "src", 'push': True},
+    'a': {'attr': "href"},
 }
 
 
@@ -62,13 +67,24 @@ def get_list(nodes: Iterable[Tag] | Iterable[PageElement], node_list: list = Non
         text = ""
 
         new_props.update(type_props.get(node.name, {}))
+        text = new_props.get('pre_text', "")
+
+        if new_props.get('attr') and hasattr(node, "get"):
+            if new_props['push']:
+                # For images etc., just post source
+                text += node.get(new_props['attr'])
+            elif node.text != node.get(new_props['attr']):
+                # For links etc., do this, but only if the link text is not the link itself, that looks stupid.
+                new_props['post_text'] = f" ({node.get(new_props['attr'])})"
 
         if type(node) is NavigableString:
             text = node.text.replace('\n', '')
+            text += new_props.get('post_text', "")
             if text:
                 node_list.append({'text': text, 'node': node, 'properties': new_props})
         elif new_props['push']:
             node_list.append({'text': text, 'node': None, 'properties': new_props})
+            new_props['pre_text'] = ""
         if hasattr(node, 'children'):
             get_list(node.children, node_list, new_props)
     return node_list
@@ -87,7 +103,8 @@ def super_transform(text: str) -> str:
         't': 'ᵗ',
         'h': 'ʰ',
         'r': 'ʳ',
-        'd': 'ᵈ'
+        'd': 'ᵈ',
+        'n': 'ⁿ'
     }
     for c in text:
         new_c = lookup.get(c, c)

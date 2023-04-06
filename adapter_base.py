@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 
 from seleniumrequests import Firefox
@@ -106,8 +107,11 @@ class AdapterBase(ABC):
         :param event: Event information
         :return: New/updated event
         """
-        platform_events = self.get_events()
-        existing_event = self._select_event(platform_events, event)
-        if existing_event:
-            return self.update_event(event, existing_event)
-        return self.create_event(event)
+        try:
+            platform_events = self.get_events()
+            existing_event = self._select_event(platform_events, event)
+            if existing_event:
+                return self.update_event(event, existing_event)
+            return self.create_event(event)
+        except BaseException:
+            logging.exception(f"Something went wrong processing {event['name']}")

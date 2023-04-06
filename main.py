@@ -78,7 +78,9 @@ def create_driver():
     options = Options()
     options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
 
-    return Firefox(service=service, options=options)
+    driver = Firefox(service=service, options=options)
+    driver.implicitly_wait(5)
+    return driver
 
 
 def get_config() -> dict:
@@ -169,8 +171,7 @@ if __name__ == '__main__':
             if driver is None:
                 driver = create_driver()
             if facebook_adapter is None:
-                pass
-            facebook_adapter = FacebookAdapter(driver, config["FACEBOOK_ID"], config["FACEBOOK_PASSWORD"],
+                facebook_adapter = FacebookAdapter(driver, config["FACEBOOK_ID"], config["FACEBOOK_PASSWORD"],
                                                config["FACEBOOK_TOTP"], config["FACEBOOK_GRAPH_API_TOKEN"])
             facebook_adapter.do_event(event)
 

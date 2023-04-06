@@ -1,11 +1,10 @@
 import os
 import time
-from typing import Tuple
 
 import requests
 from seleniumrequests import Firefox
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
@@ -92,7 +91,6 @@ class FacebookAdapter(AdapterBase):
         remember_radio.click()
         remember_submit_button.click()
 
-        from selenium.common import TimeoutException
         try:
             WebDriverWait(self.driver, 15).until(expected_conditions.url_to_be("https://www.facebook.com/"))
         except TimeoutException:
@@ -264,5 +262,6 @@ class FacebookAdapter(AdapterBase):
     def get_event_urls(self) -> tuple[str, str]:
         long_url = self.driver.current_url.split('?')[0]
         self.driver.find_element(By.XPATH, '//div[@aria-label="Delen"]').click()
+        time.sleep(0.1)
         short_url = self.driver.find_element(By.XPATH, '//span[contains(text(), "fb.me")]').text
         return long_url, short_url

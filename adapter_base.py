@@ -47,6 +47,23 @@ class AdapterBase(ABC):
         if not platform_events:
             return None
 
+        auto_choice = self._select_event_auto(platform_events, event)
+        if auto_choice is not None:
+            return auto_choice
+
+        return self._select_event_manual(platform_events)
+
+    def _select_event_auto(self, platform_events: list[dict], event: dict, log=True) -> dict | None:
+        """
+        Automatically or select a platform event from a list.
+
+        :param platform_events: Events to choose from
+        :param event: Source info to look for (mainly name)
+        :return: Selected event
+        """
+        if not platform_events:
+            return None
+
         auto_choice = None
         for i, facebook_event in enumerate(platform_events):
             if event['name'] in facebook_event['name']:
@@ -54,9 +71,19 @@ class AdapterBase(ABC):
                 break
 
         if auto_choice is not None:
-            print(f"{self.__name}: Found event automatically!")
+            if log:
+                print(f"{self.__name}: Found event automatically!")
             return platform_events[auto_choice]
 
+        return None
+
+    def _select_event_manual(self, platform_events: list[dict]) -> dict | None:
+        """
+        Manually select a platform event from a list.
+
+        :param platform_events: Events to choose from
+        :return: Selected event
+        """
         print(f"{self.__name}: Select event to update:\n  0 for not included, create new one")
 
         events_to_display = 10

@@ -194,7 +194,7 @@ class FacebookAdapter(AdapterBase):
         self.driver.find_element(By.XPATH, '//div[@aria-label="Bijwerken"]').click()
 
         WebDriverWait(self.driver, 10).until(
-            expected_conditions.url_changes(edit_url)
+            expected_conditions.url_contains(f"https://www.facebook.com/events/{existing_event['id']}")
         )
 
         long_url, short_url = self.get_event_urls()
@@ -262,7 +262,7 @@ class FacebookAdapter(AdapterBase):
 
     @login_required
     def get_event_urls(self) -> tuple[str, str]:
-        long_url = self.driver.current_url
+        long_url = self.driver.current_url.split('?')[0]
         self.driver.find_element(By.XPATH, '//div[@aria-label="Delen"]').click()
         short_url = self.driver.find_element(By.XPATH, '//span[contains(text(), "fb.me")]').text
         return long_url, short_url

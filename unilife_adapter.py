@@ -12,6 +12,10 @@ from adapter_base import AdapterBase, login_required
 
 
 class UnilifeAdapter(AdapterBase):
+    base_url = "https://app.uni-life.nl/event"
+    login_url = "https://app.uni-life.nl/login"
+    create_url = "https://app.uni-life.nl/event/create"
+
     def __init__(self, driver: Firefox, username: str, password: str):
         super().__init__(driver, "Unilife")
         self.__username = username
@@ -20,7 +24,7 @@ class UnilifeAdapter(AdapterBase):
     def login(self):
         if self.logged_in:
             return
-        self.driver.get('https://app.uni-life.nl/login')
+        self.driver.get(self.login_url)
         username_field = self.driver.find_element(By.XPATH, "//input[@name='email']")
         password_field = self.driver.find_element(By.XPATH, "//input[@name='password']")
         login_button = self.driver.find_element(By.CLASS_NAME, 'login-btn')  # or By.XPATH, "//form[@class='login']/button"
@@ -28,7 +32,7 @@ class UnilifeAdapter(AdapterBase):
         password_field.send_keys(self.__password)
         login_button.click()
         WebDriverWait(self.driver, 10).until(
-            expected_conditions.url_to_be("https://app.uni-life.nl/event")
+            expected_conditions.url_to_be(self.base_url)
         )
         self.logged_in = True
 
@@ -39,7 +43,9 @@ class UnilifeAdapter(AdapterBase):
 
         :return: List of events
         """
-        r = self.driver.request('GET', "https://app.uni-life.nl/event",
+        if self.driver.current_url != self.base_url:
+            self.driver.get(self.base_url)
+        r = self.driver.request('GET', self.base_url,
                                 params={'direction': 'asc', 'search': '', 'filter': '', 'page': 0},
                                 headers={"Accept": "application/json, text/plain, */*"})
         unilife_events = r.json()['body']
@@ -110,9 +116,16 @@ class UnilifeAdapter(AdapterBase):
         :param event: Source info
         :return: If creation was successful
         """
-        created_event = self.general_event_action(event, "https://app.uni-life.nl/event/create")
+        created_event = self.general_event_action(event, self.create_url)
         if created_event:
             print(f"Unilife: Created {event['name']} event")
+            # Get URL of just created event
+            platform_events = self.get_events()
+            existing_event = self._select_event_auto(platform_events, event)
+            if existing_event is not None:
+                self.driver.get(existing_event['link'])  # Show event to manually check.
+            else:
+                warnings.warn("Unilife: Something went wrong showing just created event")
         else:
             warnings.warn(f"Unilife: Something went wrong creating the {event['name']} event")
         return created_event
@@ -128,6 +141,7 @@ class UnilifeAdapter(AdapterBase):
         updated_event = self.general_event_action(event, unilife_event['link'], {"_method": "PUT"})
         if updated_event:
             print(f"Unilife: Updated {event['name']} event")
+            self.driver.get(unilife_event['link'])  # Show event to manually check.
         else:
             warnings.warn(f"Unilife: Something went wrong updating the {event['name']} event")
         return updated_event

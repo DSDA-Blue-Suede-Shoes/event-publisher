@@ -185,7 +185,7 @@ class FacebookAdapter(AdapterBase):
         self.driver.find_element(By.XPATH, '//div[@aria-label="Afbeelding verwijderen"]').click()
 
         # Put new image
-        filename = os.path.join(os.getcwd(), "event-image.jpg")
+        filename = os.path.join(os.getcwd(), event_info['image_name'])
         file = self.driver.find_element(By.XPATH, '//input[@type="file"]')
         file.send_keys(filename)
         time.sleep(1)
@@ -207,7 +207,7 @@ class FacebookAdapter(AdapterBase):
         self.driver.get("https://www.facebook.com/events/create/")
         time.sleep(0.5)
 
-        filename = os.path.join(os.getcwd(), "event-image.jpg")
+        filename = os.path.join(os.getcwd(), event_info['image_name'])
         file = self.driver.find_element(By.XPATH, '//input[@type="file"]')
         file.send_keys(filename)
 

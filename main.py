@@ -59,7 +59,9 @@ def get_event_info(event: dict) -> dict:
     image_url = soup.find("img", "wp-post-image")['src']
     r = requests.get(image_url, stream=True)
     if r.status_code == 200:
-        with open('event-image.jpg', 'wb') as f:
+        extension = image_url.split(".")[-1].lower()
+        event['image_name'] = f'event-image.{extension}'
+        with open(event['image_name'], 'wb') as f:
             import shutil
             r.raw.decode_content = True
             shutil.copyfileobj(r.raw, f)
@@ -150,6 +152,8 @@ if __name__ == '__main__':
         # Actual work with the event
         event = events[choice - 1]
         event = get_event_info(event)
+
+        print(f"Processing {event['name']} on {event['start_date']}")
 
         if ask_confirmation("Do you want to put this in the Google Calendar?"):
             g_events = calendar.do_event(event)

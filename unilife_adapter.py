@@ -153,7 +153,7 @@ class UnilifeAdapter(AdapterBase):
         token = token_input.get('value')
 
         # Create form data
-        values = self.unilife_event_from_event(event, token, open("event-image.jpg", "rb"))
+        values = self.unilife_event_from_event(event, token, open(event['image_name'], "rb"))
         values.update(value_additions)
 
         # Post event

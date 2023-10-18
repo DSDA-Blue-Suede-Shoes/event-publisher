@@ -79,12 +79,13 @@ class UnilifeAdapter(AdapterBase):
             "event_type_id": 1,
             "association": 331,
             "universities[]": 8,
-            "interests[]": [64, 44],
+            "interests[]": 44,
             "url": event['link'],
             "button_text": 1,
             "location_name": event['venue'],
             "location": event['venue'],
             "location_address": event['address'],
+            "timezone": "Europe/Amsterdam",
             "startdate": event['start'].strftime("%d-%m-%Y"),
             "starttime[hours]": event['start'].hour,
             "starttime[minutes]": event['start'].minute,
@@ -116,7 +117,7 @@ class UnilifeAdapter(AdapterBase):
         :param event: Source info
         :return: If creation was successful
         """
-        created_event = self.general_event_action(event, self.create_url)
+        created_event = self.general_event_action(event, self.create_url, "POST")
         if created_event:
             print(f"Unilife: Created {event['name']} event")
             # Get URL of just created event
@@ -138,7 +139,7 @@ class UnilifeAdapter(AdapterBase):
         :param unilife_event: Existing Unilife event info
         :return: If update was successful
         """
-        updated_event = self.general_event_action(event, unilife_event['link'], {"_method": "PUT"})
+        updated_event = self.general_event_action(event, unilife_event['link'], "PUT")
         if updated_event:
             print(f"Unilife: Updated {event['name']} event")
             self.driver.get(unilife_event['link'])  # Show event to manually check.
@@ -146,17 +147,15 @@ class UnilifeAdapter(AdapterBase):
             warnings.warn(f"Unilife: Something went wrong updating the {event['name']} event")
         return updated_event
 
-    def general_event_action(self, event: dict, url: str, value_additions: dict | None = None):
+    def general_event_action(self, event: dict, url: str, method: str):
         """
         Functional part of updating/creating a Unilife event.
 
         :param event: Event source info
         :param url: URL to use for posting info to. Can result in create or update.
-        :param value_additions: For updates, the _method property should be PUT, this is used to pass that info.
+        :param method: For updates, the method property should be PUT, for new items, POST.
         :return: If post was successful
         """
-        if value_additions is None:
-            value_additions = {}
         if not self.logged_in:
             self.login()
 
@@ -168,8 +167,7 @@ class UnilifeAdapter(AdapterBase):
 
         # Create form data
         values = self.unilife_event_from_event(event, token, open(event['image_name'], "rb"))
-        values.update(value_additions)
 
         # Post event
-        posted = self.driver.request('POST', url, data=values)
+        posted = self.driver.request(method, url, data=values)
         return posted.status_code == 200

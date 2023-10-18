@@ -18,10 +18,15 @@ from text_transforms import trim_list, get_list, render_unicode, render_whatsapp
 from unilife_adapter import UnilifeAdapter
 from utils import DEFAULT_TZ, ask_confirmation
 
+headers = {
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache"
+}
+
 
 def get_events():
     print("Getting events from website")
-    events_raw = requests.get("https://dsda.nl/wp-json/wp/v2/tribe_events").json()
+    events_raw = requests.get("https://dsda.nl/wp-json/wp/v2/tribe_events?per_page=25", headers=headers).json()
     events = [{'name': html.unescape(event['title']['rendered']), 'content': event['content']['rendered'],
                'link': event['link'], 'slug': event['slug']} for event in events_raw]
 
@@ -29,7 +34,7 @@ def get_events():
 
 
 def get_event_info(event: dict) -> dict:
-    event_page = requests.get(event['link'])
+    event_page = requests.get(event['link'], headers=headers)
     soup = BeautifulSoup(event_page.text, 'html.parser')
 
     start_date = soup.find("abbr", "tribe-events-start-date")['title']
@@ -43,9 +48,28 @@ def get_event_info(event: dict) -> dict:
     event['start'] = DEFAULT_TZ.localize(
         datetime.strptime(f"{event['start_date']} {event['start_time']}", "%Y-%m-%d %H:%M"))
     event['end'] = DEFAULT_TZ.localize(datetime.strptime(f"{event['end_date']} {event['end_time']}", "%Y-%m-%d %H:%M"))
-    event['venue'] = soup.find("dd", "tribe-venue").text.strip()
-    # Fixme, not all these are always defined
-    event['address'] = f'{soup.find("span", "tribe-street-address").text.strip()}, {soup.find("span", "tribe-postal-code").text.strip()} {soup.find("span", "tribe-locality").text.strip()}'
+
+    try:
+        event['venue'] = soup.find("dd", "tribe-venue").text.strip()
+    except AttributeError:
+        event['venue'] = ''
+
+    if soup.find("span", "tribe-street-address") is not None:
+        try:
+            address = soup.find("span", "tribe-street-address").text.strip()
+        except AttributeError:
+            address = ''
+        try:
+            postal_code = soup.find("span", "tribe-postal-code").text.strip()
+        except AttributeError:
+            postal_code = ''
+        try:
+            locality = soup.find("span", "tribe-locality").text.strip()
+        except AttributeError:
+            locality = ''
+        event['address'] = f'{address}, {postal_code} {locality}'
+    else:
+        event['address'] = ''
 
     categories_wrapper = soup.find("dd", "tribe-events-event-categories")
     categories = [cat.text for cat in categories_wrapper.find_all('a')]
@@ -57,7 +81,7 @@ def get_event_info(event: dict) -> dict:
     event['content-whatsapp'] = render_whatsapp(content_text_list) + f"\n\nAll details:\n{event['link']}"
 
     image_url = soup.find("img", "wp-post-image")['src']
-    r = requests.get(image_url, stream=True)
+    r = requests.get(image_url, stream=True, headers=headers)
     if r.status_code == 200:
         extension = image_url.split(".")[-1].lower()
         event['image_name'] = f'event-image.{extension}'
@@ -122,8 +146,6 @@ if __name__ == '__main__':
 
     # get_long_lived_token(config)  # Use when you need such a token. Obviously.
 
-    events = get_events()
-
     calendar = CalendarAdapter()
     driver = None
     unilife_adapter = None
@@ -131,10 +153,12 @@ if __name__ == '__main__':
 
     quit_loop = False
     while not quit_loop:
+        events = get_events()
+        continue_loop = False
         # Interfacing with user
         # Select event or quit
         print("\nSelect event to process:")
-        print("  Press q to quit")
+        print("  Press q to quit, r to refresh")
         for i, event in enumerate(events):
             print(f"  {i + 1}: {event['name']}")
             pass
@@ -145,11 +169,17 @@ if __name__ == '__main__':
             if _input == 'q':
                 quit_loop = True
                 break
+            if _input == 'r':
+                continue_loop = True
+                break
             choice = int(_input)
 
         if quit_loop:
             print("Quitting")
             break
+
+        if continue_loop:
+            continue
 
         # Actual work with the event
         event = events[choice - 1]
@@ -172,7 +202,7 @@ if __name__ == '__main__':
                 driver = create_driver()
             if facebook_adapter is None:
                 facebook_adapter = FacebookAdapter(driver, config["FACEBOOK_ID"], config["FACEBOOK_PASSWORD"],
-                                               config["FACEBOOK_TOTP"], config["FACEBOOK_GRAPH_API_TOKEN"])
+                                                   config["FACEBOOK_TOTP"], config["FACEBOOK_GRAPH_API_TOKEN"])
             facebook_adapter.do_event(event)
 
         if ask_confirmation("Do you want a WhatsApp share message?"):

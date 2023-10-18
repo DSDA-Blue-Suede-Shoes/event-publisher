@@ -6,6 +6,11 @@ type_props = {
     "#text": {},
     "b": {'bold': True},
     "strong": {'bold': True},
+    "h1": {'bold': True, 'line': 2, 'push': True},
+    "h2": {'bold': True, 'line': 2, 'push': True},
+    "h3": {'bold': True, 'line': 2, 'push': True},
+    "h4": {'bold': True, 'line': 2, 'push': True},
+    "h5": {'bold': True, 'line': 2, 'push': True},
     "i": {'italic': True},
     "em": {'italic': True},
     "sup": {'super': True},
@@ -18,6 +23,11 @@ type_props = {
     'th': {'post_text': " | "},
     'img': {'attr': "src", 'push': True},
     'a': {'attr': "href"},
+}
+
+class_props = {
+    "knewave": {'bold': True, 'italic': True},
+    "indansen": {'bold': True, 'italic': True},
 }
 
 
@@ -67,6 +77,10 @@ def get_list(nodes: Iterable[Tag] | Iterable[PageElement], node_list: list = Non
         text = ""
 
         new_props.update(type_props.get(node.name, {}))
+        if hasattr(node, "get"):
+            class_list = node.get("class", [''])
+            for c in class_list:
+                new_props.update(class_props.get(c, {}))
         text = new_props.get('pre_text', "")
 
         if new_props.get('attr') and hasattr(node, "get"):

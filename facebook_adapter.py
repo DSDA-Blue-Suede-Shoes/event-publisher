@@ -144,6 +144,7 @@ class FacebookAdapter(AdapterBase):
         self.driver.implicitly_wait(5)
 
         event_name_field = self.driver.find_element(By.XPATH, '//label[@aria-label="Evenementnaam"]//input')
+        event_name_field.clear()
         event_name_field.send_keys(event_info['name'])
 
         # Date and time

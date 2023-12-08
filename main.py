@@ -103,7 +103,8 @@ def create_driver():
     service = Service(executable_path=ff_path)
 
     options = Options()
-    #options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
+    if os.name == 'nt':
+        options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
 
     driver = Firefox(service=service, options=options)
     driver.implicitly_wait(5)
@@ -199,8 +200,9 @@ if __name__ == '__main__':
             if unilife_adapter is None:
                 unilife_adapter = UnilifeAdapter(driver, config["UNILIFE_ID"], config["UNILIFE_PASSWORD"])
             unilife_success = unilife_adapter.do_event(event)
-
+        
         if ask_confirmation("Do you want to put this event on Facebook?"):
+            print(get_long_lived_token(config))
             if driver is None:
                 driver = create_driver()
             if facebook_adapter is None:

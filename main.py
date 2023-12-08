@@ -96,11 +96,14 @@ def get_event_info(event: dict) -> dict:
 
 
 def create_driver():
-    ff_path = 'geckodriver.exe'  # Same Directory as Python Program
+    if os.name == 'posix':
+        ff_path = 'geckodriver'  # Same Directory as Python Program
+    else:
+        ff_path = 'geckodriver.exe'  # Same Directory as Python Program
     service = Service(executable_path=ff_path)
 
     options = Options()
-    options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
+    #options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
 
     driver = Firefox(service=service, options=options)
     driver.implicitly_wait(5)

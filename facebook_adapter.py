@@ -104,8 +104,8 @@ class FacebookAdapter(AdapterBase):
         # Click profile picture
         profile_svg = self.driver.find_element(By.XPATH, '//*[name()="svg" and @aria-label="Je profiel"]')
         profile_svg.click()
-        # Click switch profile
-        profile_switch = self.driver.find_element(By.XPATH, '//div[@aria-label="Van profiel wisselen"]')
+        # Click BSS profile
+        profile_switch = self.driver.find_element(By.XPATH, '//span[text()="DSDA Blue Suede Shoes"]')
         profile_switch.click()
 
         time.sleep(0.5)

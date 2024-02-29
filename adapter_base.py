@@ -87,7 +87,7 @@ class AdapterBase(ABC):
         """
         print(f"{self.__name}: Select event to update:\n  0 for not included, create new one")
 
-        events_to_display = 10
+        events_to_display = 20
         for i, facebook_event in enumerate(platform_events):
             print(f"  {i + 1}: {facebook_event['name']}")
             if i == events_to_display - 1:

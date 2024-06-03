@@ -58,7 +58,7 @@ class FacebookAdapter(AdapterBase):
         if self.logged_in:
             return
         self.driver.get("https://www.facebook.com/")
-        essential_cookies_button = self.driver.find_element(By.XPATH, '//button[@title="Decline optional cookies"]')
+        essential_cookies_button = self.driver.find_element(By.XPATH, '//div[@aria-label="Decline optional cookies"]')
         login_button = self.driver.find_element(By.XPATH, '//button[@name="login"]')
         email_field = self.driver.find_element(By.ID, "email")
         password_field = self.driver.find_element(By.ID, "pass")

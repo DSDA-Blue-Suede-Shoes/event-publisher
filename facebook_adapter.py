@@ -69,34 +69,34 @@ class FacebookAdapter(AdapterBase):
         password_field.send_keys(self.__password)
         login_button.click()
 
-        WebDriverWait(self.driver, 15).until(
-            expected_conditions.presence_of_element_located(
-                (By.ID, 'approvals_code'),
-            )
-        )
-        code_field = self.driver.find_element(By.ID, "approvals_code")
-        code_submit_button = self.driver.find_element(By.ID, "checkpointSubmitButton")
-        totp = pyotp.TOTP(self.__totp)
-        code_field.send_keys(totp.now())
-        code_submit_button.click()
-
-        WebDriverWait(self.driver, 10).until(
-            expected_conditions.text_to_be_present_in_element(
-                (By.TAG_NAME, 'strong'),
-                "Browser"
-            )
-        )
-
-        remember_submit_button = self.driver.find_element(By.ID, "checkpointSubmitButton")
-        remember_radio = self.driver.find_elements(By.CLASS_NAME, "uiInputLabelInput")[1]  # Don't remember
-        remember_radio.click()
-        remember_submit_button.click()
-
         try:
+            WebDriverWait(self.driver, 15).until(
+                expected_conditions.presence_of_element_located(
+                    (By.ID, 'approvals_code'),
+                )
+            )
+            code_field = self.driver.find_element(By.ID, "approvals_code")
+            code_submit_button = self.driver.find_element(By.ID, "checkpointSubmitButton")
+            totp = pyotp.TOTP(self.__totp)
+            code_field.send_keys(totp.now())
+            code_submit_button.click()
+
+            WebDriverWait(self.driver, 10).until(
+                expected_conditions.text_to_be_present_in_element(
+                    (By.TAG_NAME, 'strong'),
+                    "Browser"
+                )
+            )
+
+            remember_submit_button = self.driver.find_element(By.ID, "checkpointSubmitButton")
+            remember_radio = self.driver.find_elements(By.CLASS_NAME, "uiInputLabelInput")[1]  # Don't remember
+            remember_radio.click()
+            remember_submit_button.click()
+
             WebDriverWait(self.driver, 15).until(expected_conditions.url_to_be("https://www.facebook.com/"))
         except TimeoutException:
             print("Timeout for automatic continuation")
-            input("Press enter to continue manually")
+            input("Press enter when logged in manually to continue")
 
         # Do profile switch, this goes faster on a simple page like this for some reason.
         self.driver.get("https://www.facebook.com/events/create/")

@@ -1,3 +1,4 @@
+import logging
 import warnings
 import sys
 import html
@@ -183,7 +184,12 @@ if __name__ == '__main__':
 
         # Actual work with the event
         event = events[choice - 1]
-        event = get_event_info(event)
+        try:
+            event = get_event_info(event)
+        except Exception as e:
+            print("Error while getting event information")
+            logging.exception(e)
+            continue
 
         print(f"Processing {event['name']} on {event['start_date']}")
 

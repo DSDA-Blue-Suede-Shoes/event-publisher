@@ -36,6 +36,12 @@ class UnilifeAdapter(AdapterBase):
         )
         self.logged_in = True
 
+
+    def _get_events_request(self):
+        return self.driver.request('GET', self.base_url,
+                            params={'direction': 'asc', 'search': '', 'filter': '', 'page': 0},
+                            headers={"Accept": "application/json, text/plain, */*"})
+
     @login_required
     def get_events(self):
         """
@@ -45,9 +51,14 @@ class UnilifeAdapter(AdapterBase):
         """
         if self.driver.current_url != self.base_url:
             self.driver.get(self.base_url)
-        r = self.driver.request('GET', self.base_url,
-                                params={'direction': 'asc', 'search': '', 'filter': '', 'page': 0},
-                                headers={"Accept": "application/json, text/plain, */*"})
+
+        r = self._get_events_request()
+        if r.status_code == 401:
+            print("Unilife login expired, logging in and trying again")
+            self.logged_in = False
+            self.login()
+            r = self._get_events_request()
+
         unilife_events = r.json()['body']
         return_events = []
 

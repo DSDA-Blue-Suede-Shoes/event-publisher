@@ -72,8 +72,11 @@ def get_event_info(event: dict) -> dict:
     else:
         event['address'] = ''
 
-    categories_wrapper = soup.find("dd", "tribe-events-event-categories")
-    categories = [cat.text for cat in categories_wrapper.find_all('a')]
+    try:
+        categories_wrapper = soup.find("dd", "tribe-events-event-categories")
+        categories = [cat.text for cat in categories_wrapper.find_all('a')]
+    except AttributeError:
+        categories = []
     event['categories'] = categories
 
     content_soup = BeautifulSoup(event['content'], 'html.parser')

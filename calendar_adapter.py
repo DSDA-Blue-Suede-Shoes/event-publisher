@@ -70,7 +70,15 @@ class CalendarAdapter:
         :param event: Event information
         :return: Calendar events
         """
-        categories = ['general', 'danszusjes'] + list(event['categories'])
+        event_categories = list(event['categories'])  # Categories from website
+        categories = ['general'] + event_categories  # Categories to publish on
+
+        # Check if any of the categories are dance related
+        dance_categories = ['ballroom', 'argentine tango', 'lindy hop']
+        has_dance_category = any(category in dance_categories for category in event_categories)
+        if has_dance_category:
+            categories.append('danszusjes')
+
         g_events = []
 
         for category in categories:

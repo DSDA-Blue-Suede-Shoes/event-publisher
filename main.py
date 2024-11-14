@@ -84,17 +84,22 @@ def get_event_info(event: dict) -> dict:
     event['content-unicode'] = render_unicode(content_text_list)
     event['content-whatsapp'] = render_whatsapp(content_text_list) + f"\n\nAll details:\n{event['link']}"
 
-    image_url = soup.find("img", "wp-post-image")['src']
-    r = requests.get(image_url, stream=True, headers=headers)
-    if r.status_code == 200:
-        extension = image_url.split(".")[-1].lower()
-        event['image_name'] = f'event-image.{extension}'
-        with open(event['image_name'], 'wb') as f:
-            import shutil
-            r.raw.decode_content = True
-            shutil.copyfileobj(r.raw, f)
+    image_tag = soup.find("img", "wp-post-image")
+    if image_tag is not None:
+        image_url = image_tag['src']
+        r = requests.get(image_url, stream=True, headers=headers)
+        if r.status_code == 200:
+            extension = image_url.split(".")[-1].lower()
+            event['image_name'] = f'event-image.{extension}'
+            with open(event['image_name'], 'wb') as f:
+                import shutil
+                r.raw.decode_content = True
+                shutil.copyfileobj(r.raw, f)
+        else:
+            warnings.warn("Could not download event image.")
     else:
-        warnings.warn("Could not download event image.")
+        event['image_name'] = None
+        warnings.warn("Event does not have an image.")
 
     return event
 

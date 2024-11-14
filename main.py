@@ -156,13 +156,14 @@ if __name__ == '__main__':
     facebook_adapter = None
 
     quit_loop = False
+    bulk_mode = False
     while not quit_loop:
         events = get_events()
         continue_loop = False
         # Interfacing with user
         # Select event or quit
         print("\nSelect event to process:")
-        print("  Press q to quit, r to refresh")
+        print("  Press q to quit, r to refresh, b to turn on bulk mode.")
         for i, event in enumerate(events):
             print(f"  {i + 1}: {event['name']}")
             pass
@@ -170,6 +171,10 @@ if __name__ == '__main__':
         choice = -1
         while choice <= 0 or choice > len(events):
             _input = input("Pick: ")
+            if _input == 'b':
+                bulk_mode = not bulk_mode
+                print(f"Turned bulk mode {'on' if bulk_mode else 'off'}.")
+                continue
             if _input == 'q':
                 quit_loop = True
                 break
@@ -196,18 +201,22 @@ if __name__ == '__main__':
 
         print(f"Processing {event['name']} on {event['start_date']}")
 
-        if ask_confirmation("Do you want to put this in the Google Calendar?"):
+        if bulk_mode or ask_confirmation("Do you want to put this in the Google Calendar?"):
             g_events = calendar.do_event(event)
 
         # Unilife is, unfortunately, not used anymore by the TU Delft.
-        # if ask_confirmation("Do you want to put this event on Unilife?"):
+        # if bulk_mode or ask_confirmation("Do you want to put this event on Unilife?"):
         #     if driver is None:
         #         driver = create_driver()
         #     if unilife_adapter is None:
         #         unilife_adapter = UnilifeAdapter(driver, config["UNILIFE_ID"], config["UNILIFE_PASSWORD"])
         #     unilife_success = unilife_adapter.do_event(event)
 
-        if ask_confirmation("Do you want to put this event on Facebook?"):
+        # Move based on what you want to bulk
+        if bulk_mode:
+            continue
+
+        if bulk_mode or ask_confirmation("Do you want to put this event on Facebook?"):
             if driver is None:
                 driver = create_driver()
             if facebook_adapter is None:
@@ -215,7 +224,7 @@ if __name__ == '__main__':
                                                    config["FACEBOOK_TOTP"], config["FACEBOOK_GRAPH_API_TOKEN"])
             facebook_adapter.do_event(event)
 
-        if ask_confirmation("Do you want a WhatsApp share message?"):
+        if bulk_mode or ask_confirmation("Do you want a WhatsApp share message?"):
             print()  # New line
             print(event['content-whatsapp'])
 

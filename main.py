@@ -199,12 +199,13 @@ if __name__ == '__main__':
         if ask_confirmation("Do you want to put this in the Google Calendar?"):
             g_events = calendar.do_event(event)
 
-        if ask_confirmation("Do you want to put this event on Unilife?"):
-            if driver is None:
-                driver = create_driver()
-            if unilife_adapter is None:
-                unilife_adapter = UnilifeAdapter(driver, config["UNILIFE_ID"], config["UNILIFE_PASSWORD"])
-            unilife_success = unilife_adapter.do_event(event)
+        # Unilife is, unfortunately, not used anymore by the TU Delft.
+        # if ask_confirmation("Do you want to put this event on Unilife?"):
+        #     if driver is None:
+        #         driver = create_driver()
+        #     if unilife_adapter is None:
+        #         unilife_adapter = UnilifeAdapter(driver, config["UNILIFE_ID"], config["UNILIFE_PASSWORD"])
+        #     unilife_success = unilife_adapter.do_event(event)
 
         if ask_confirmation("Do you want to put this event on Facebook?"):
             if driver is None:

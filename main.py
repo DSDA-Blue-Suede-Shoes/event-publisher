@@ -1,6 +1,6 @@
 import logging
 import warnings
-import sys
+import importlib
 import html
 import os
 from json import loads
@@ -14,7 +14,7 @@ from selenium.webdriver.firefox.options import Options
 from bs4 import BeautifulSoup
 
 from calendar_adapter import CalendarAdapter
-from facebook_adapter import FacebookAdapter, get_long_lived_token
+import facebook_adapter as FA
 from text_transforms import trim_list, get_list, render_unicode, render_whatsapp
 from unilife_adapter import UnilifeAdapter
 from utils import DEFAULT_TZ, ask_confirmation
@@ -147,6 +147,11 @@ def get_config() -> dict:
     return conf
 
 
+def create_fb_adapter(config: dict, driver: Firefox) -> FA.FacebookAdapter:
+    return FA.FacebookAdapter(driver, config["FACEBOOK_ID"], config["FACEBOOK_PASSWORD"],
+                              config["FACEBOOK_TOTP"], config["FACEBOOK_GRAPH_API_TOKEN"])
+
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     config = get_config()
@@ -168,7 +173,7 @@ if __name__ == '__main__':
         # Interfacing with user
         # Select event or quit
         print("\nSelect event to process:")
-        print("  Press q to quit, r to refresh, b to turn on bulk mode.")
+        print("  Press q to quit, r to refresh, b to turn on bulk mode. (dev) R to reload Facebook adapter.")
         for i, event in enumerate(events):
             print(f"  {i + 1}: {event['name']}")
             pass
@@ -186,6 +191,12 @@ if __name__ == '__main__':
             if _input == 'r':
                 continue_loop = True
                 break
+            if _input == 'R':
+                importlib.reload(FA)
+                was_logged_in = facebook_adapter.logged_in
+                facebook_adapter = create_fb_adapter(config, driver)
+                facebook_adapter.logged_in = was_logged_in
+                continue
             choice = int(_input)
 
         if quit_loop:
@@ -225,8 +236,7 @@ if __name__ == '__main__':
             if driver is None:
                 driver = create_driver()
             if facebook_adapter is None:
-                facebook_adapter = FacebookAdapter(driver, config["FACEBOOK_ID"], config["FACEBOOK_PASSWORD"],
-                                                   config["FACEBOOK_TOTP"], config["FACEBOOK_GRAPH_API_TOKEN"])
+                facebook_adapter = create_fb_adapter(config, driver)
             facebook_adapter.do_event(event)
 
         if bulk_mode or ask_confirmation("Do you want a WhatsApp share message?"):

@@ -157,18 +157,18 @@ class FacebookAdapter(AdapterBase):
         event_start_time_field.send_keys([Keys.BACK_SPACE] * 20 + [Keys.DELETE] * 20)
         event_start_time_field.send_keys(event_info['start'].strftime("%H:%M"))
 
-        event_end_date_field = self.driver.find_element(By.XPATH, '*[contains(text(), "Einddatum")]/following-sibling::div/input')
+        event_end_date_field = self.driver.find_element(By.XPATH, '//*[contains(text(), "Einddatum")]/following-sibling::div/input')
         event_end_date_field.click()
         event_end_date_field.send_keys([Keys.BACK_SPACE] * 20 + [Keys.DELETE] * 20)
         event_end_date_field.send_keys(event_info['end'].strftime("%d-%m-%Y"))
 
-        event_end_time_field = self.driver.find_element(By.XPATH, '*[contains(text(), "Eindtijd")]/following-sibling::div/input')
+        event_end_time_field = self.driver.find_element(By.XPATH, '//*[contains(text(), "Eindtijd")]/following-sibling::div/input')
         event_end_time_field.click()
         event_end_time_field.send_keys([Keys.BACK_SPACE] * 20 + [Keys.DELETE] * 20)
         event_end_time_field.send_keys(event_info['end'].strftime("%H:%M"))
 
         # Click this is a personal event, not online
-        self.driver.find_element(By.XPATH, '//span[@aria-label="Is dit persoonlijk of virtueel?"]').click()
+        self.driver.find_element(By.XPATH, '//*[contains(text(), "Is dit persoonlijk of virtueel?")]/following-sibling::*').click()
         self.driver.find_element(By.XPATH, '//div[@role="option"][1]').click()  # First option
 
         # Location
@@ -178,7 +178,7 @@ class FacebookAdapter(AdapterBase):
 
         event_name_field.click()  # Make other fields visible again
         # Event details (description)
-        details_field = self.driver.find_element(By.XPATH, '//span[contains(text(), "Wat zijn de details?")]//textarea')
+        details_field = self.driver.find_element(By.XPATH, '//*[contains(text(), "Wat zijn de details?")]/following-sibling::div/textarea')
         details_field.click()
         details_field.clear()
         details_field.send_keys(event_info['content-unicode'])

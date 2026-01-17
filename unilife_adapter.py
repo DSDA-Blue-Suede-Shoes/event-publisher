@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from typing import BinaryIO
 
 from adapter_base import AdapterBase, login_required
+from utils import runtime_data_folder
 
 
 class UnilifeAdapter(AdapterBase):
@@ -177,7 +178,7 @@ class UnilifeAdapter(AdapterBase):
         token = token_input.get('value')
 
         # Create form data
-        values = self.unilife_event_from_event(event, token, open(event['image_name'], "rb"))
+        values = self.unilife_event_from_event(event, token, open(runtime_data_folder / event['image_name'], "rb"))
 
         # Post event
         posted = self.driver.request(method, url, data=values)

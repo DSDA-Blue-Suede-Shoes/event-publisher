@@ -178,7 +178,7 @@ class CalendarAdapter:
         print('Calendar: Searching events based on event time... ', end='')
         start_time = event['start'].isoformat()
         end_time = event['end'].isoformat()
-        events_result = self.service.events().list(calendarId=calendar_ids[category], maxResults=10,
+        events_result = self.service.events().list(calendarId=calendar_ids[category], maxResults=15,
                                                    timeMin=start_time, timeMax=end_time,
                                                    singleEvents=True, orderBy='startTime').execute()
         events = events_result.get('items', [])
@@ -189,7 +189,7 @@ class CalendarAdapter:
 
         print('Calendar: Searching events based on search query... ')
         now = datetime.datetime.utcnow().isoformat() + 'Z'
-        events_result = self.service.events().list(calendarId=calendar_ids[category], maxResults=10,
+        events_result = self.service.events().list(calendarId=calendar_ids[category], maxResults=15,
                                                    timeMin=now, q=event['name'],
                                                    singleEvents=True, orderBy='startTime').execute()
         events = events_result.get('items', [])
@@ -211,8 +211,8 @@ def get_service() -> Resource:
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    if os.path.exists('runtime_data/token.json'):
+        creds = Credentials.from_authorized_user_file('runtime_data/token.json', SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -222,7 +222,7 @@ def get_service() -> Resource:
                 'google_api_credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open('token.json', 'w') as token:
+        with open('runtime_data/token.json', 'w') as token:
             token.write(creds.to_json())
 
     try:

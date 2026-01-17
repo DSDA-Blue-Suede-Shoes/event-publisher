@@ -16,8 +16,7 @@ from bs4 import BeautifulSoup
 from calendar_adapter import CalendarAdapter
 import facebook_adapter as FA
 from text_transforms import trim_list, get_list, render_unicode, render_whatsapp
-from unilife_adapter import UnilifeAdapter
-from utils import DEFAULT_TZ, ask_confirmation
+from utils import DEFAULT_TZ, ask_confirmation, runtime_data_folder
 
 headers = {
     "Cache-Control": "no-cache",
@@ -51,7 +50,7 @@ def get_event_info(event: dict) -> dict:
     event['end'] = DEFAULT_TZ.localize(datetime.strptime(f"{event['end_date']} {event['end_time']}", "%Y-%m-%d %H:%M"))
 
     try:
-        event['venue'] = soup.find("dd", "tribe-venue").text.strip()
+        event['venue'] = soup.find("li", "tribe-venue").text.strip()
     except AttributeError:
         event['venue'] = ''
 
@@ -73,7 +72,7 @@ def get_event_info(event: dict) -> dict:
         event['address'] = ''
 
     try:
-        categories_wrapper = soup.find("dd", "tribe-events-event-categories")
+        categories_wrapper = soup.find("span", "tribe-events-event-categories")
         categories = [cat.text for cat in categories_wrapper.find_all('a')]
     except AttributeError:
         categories = []
@@ -81,8 +80,14 @@ def get_event_info(event: dict) -> dict:
 
     content_soup = BeautifulSoup(event['content'], 'html.parser')
     content_text_list = trim_list(get_list(content_soup.children))
-    event['content-unicode'] = render_unicode(content_text_list)
-    event['content-whatsapp'] = render_whatsapp(content_text_list) + f"\n\nAll details:\n{event['link']}"
+    # For events with empty descriptions. Facebook does not accept empty descriptions, and in general it looks meh.
+    if len(content_text_list) == 0:
+        warnings.warn("Event content is empty.")
+        event['content-unicode'] = "Details to be announced."
+        event['content-whatsapp'] = "Details to be announced."
+    else:
+        event['content-unicode'] = render_unicode(content_text_list)
+        event['content-whatsapp'] = render_whatsapp(content_text_list) + f"\n\nAll details:\n{event['link']}"
 
     image_tag = soup.find("img", "wp-post-image")
     if image_tag is not None:
@@ -91,7 +96,7 @@ def get_event_info(event: dict) -> dict:
         if r.status_code == 200:
             extension = image_url.split(".")[-1].lower()
             event['image_name'] = f'event-image.{extension}'
-            with open(event['image_name'], 'wb') as f:
+            with open(runtime_data_folder / event['image_name'], 'wb') as f:
                 import shutil
                 r.raw.decode_content = True
                 shutil.copyfileobj(r.raw, f)
@@ -110,6 +115,11 @@ def create_driver():
 
     options = Options()
     options.binary_location = r'C:\Program Files\Mozilla Firefox\firefox.exe'
+    ff_profile_dir = runtime_data_folder / 'firefox-profile'
+    ff_profile_dir.mkdir(exist_ok=True)
+
+    options.add_argument("-profile")
+    options.add_argument(str(ff_profile_dir))
 
     driver = Firefox(service=service, options=options)
     driver.implicitly_wait(5)

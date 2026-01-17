@@ -12,6 +12,7 @@ from selenium.webdriver.remote.webelement import WebElement
 import pyotp
 
 from adapter_base import AdapterBase, login_required
+from utils import runtime_data_folder
 
 graph_api_version = "v16.0"
 page_id = "204304653318353"
@@ -58,8 +59,13 @@ class FacebookAdapter(AdapterBase):
         if self.logged_in:
             return
         self.driver.get("https://www.facebook.com/")
+        try:
+            login_button = self.driver.find_element(By.XPATH, '//button[@name="login"]')
+        except NoSuchElementException:
+            print("No login button found, assuming already logged in")
+            self.logged_in = True
+            return
         essential_cookies_button = self.driver.find_element(By.XPATH, '//div[@aria-label="Decline optional cookies"]')
-        login_button = self.driver.find_element(By.XPATH, '//button[@name="login"]')
         email_field = self.driver.find_element(By.ID, "email")
         password_field = self.driver.find_element(By.ID, "pass")
 
@@ -132,9 +138,9 @@ class FacebookAdapter(AdapterBase):
 
     def _fil_event_info(self, event_info: dict):
         # Setting image
-        filename = os.path.join(os.getcwd(), event_info['image_name'])
+        filename = runtime_data_folder / event_info['image_name']
         file = self.driver.find_element(By.XPATH, '//input[@type="file"]')
-        file.send_keys(filename)
+        file.send_keys(str(filename))
 
         self.driver.implicitly_wait(0)
         end_field_test = self.driver.find_elements(By.XPATH, '//span[@aria-label="Einddatum"]//input')
@@ -181,7 +187,11 @@ class FacebookAdapter(AdapterBase):
         details_field = self.driver.find_element(By.XPATH, '//*[contains(text(), "Wat zijn de details?")]/following-sibling::div/textarea')
         details_field.click()
         details_field.clear()
-        details_field.send_keys(event_info['content-unicode'])
+        event_details = event_info['content-unicode']
+        # Safeguard against empty details, an event cannot be posted when the details are empty.
+        if len(event_details) == 0:
+            event_details = "Details to be announced."
+        details_field.send_keys(event_details)
 
     @login_required
     def update_event(self, event_info: dict, existing_event: dict):

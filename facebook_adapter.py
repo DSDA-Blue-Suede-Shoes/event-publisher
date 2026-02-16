@@ -143,7 +143,8 @@ class FacebookAdapter(AdapterBase):
         file.send_keys(str(filename))
 
         self.driver.implicitly_wait(0)
-        end_field_test = self.driver.find_elements(By.XPATH, '//span[@aria-label="Einddatum"]//input')
+        end_date_input_xpath = '//*[contains(text(), "Einddatum")]/following-sibling::div/input'
+        end_field_test = self.driver.find_elements(By.XPATH, end_date_input_xpath)
         if len(end_field_test) == 0:
             # Open end date and time
             self.driver.find_element(By.XPATH, '//*[contains(text(), "Einddatum en -tijd")]').click()
@@ -163,7 +164,7 @@ class FacebookAdapter(AdapterBase):
         event_start_time_field.send_keys([Keys.BACK_SPACE] * 20 + [Keys.DELETE] * 20)
         event_start_time_field.send_keys(event_info['start'].strftime("%H:%M"))
 
-        event_end_date_field = self.driver.find_element(By.XPATH, '//*[contains(text(), "Einddatum")]/following-sibling::div/input')
+        event_end_date_field = self.driver.find_element(By.XPATH, end_date_input_xpath)
         event_end_date_field.click()
         event_end_date_field.send_keys([Keys.BACK_SPACE] * 20 + [Keys.DELETE] * 20)
         event_end_date_field.send_keys(event_info['end'].strftime("%d-%m-%Y"))
